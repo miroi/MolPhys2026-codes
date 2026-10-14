@@ -15,8 +15,8 @@ n_frozen_layers = 0
 # Se54_Dip contains six Se layers. Set this to 6 to leave only Hg mobile
 # in the adsorbate-on-slab phonon calculation and no vibrational coordinates
 # for the clean slab.
-#n_frozen_layers_vibrations = 6
-n_frozen_layers_vibrations = 0
+n_frozen_layers_vibrations = 6
+#n_frozen_layers_vibrations = 0
 
 fmax_slab = 0.01
 fmax_adsorbate = 0.005
@@ -33,6 +33,9 @@ verbose = true
 save_trajectories = true
 
 [phonons]
+# Freeze every substrate atom for vibrations, independent of detected layer count.
+# When true, this takes precedence over n_frozen_layers_vibrations.
+freeze_all_substrate_vibrations = true
 method = ase
 #method = custom
 ase_vibration_nfree = 2
@@ -52,8 +55,8 @@ calculate_temperature_scan = false
 [runtime]
 # MACE execution device: cpu, cuda, or auto.
 # Use cpu to avoid CUDA/GPU errors; use cuda to require a GPU; auto selects CUDA when available.
-#device = cpu
-device = cuda
+device = cpu
+#device = cuda
 cuda_clear_between_phonons = true
 
 [dispersion]

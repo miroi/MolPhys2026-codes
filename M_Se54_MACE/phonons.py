@@ -10,11 +10,11 @@ passed to the calculator, so forces retain interactions with atoms that are
 frozen in the vibrational coordinate space.  Only the selected mobile atoms
 are displaced and therefore only their Hessian block is diagonalized.
 
-The key control is n_frozen_layers_vibrations:
-    - it counts bottom substrate layers frozen for vibrations only;
-    - it may equal the total number of substrate layers;
-    - adsorbate is never frozen by the substrate-layer setting;
-    - the original geometry-relaxation constraints are never modified.
+Vibrational substrate freezing can be controlled by either:
+    - n_frozen_layers_vibrations: freeze a number of bottom substrate layers; or
+    - freeze_all_substrate_vibrations=True: freeze every substrate atom, independent
+      of layer detection. The adsorbate remains mobile in either mode.
+Geometry-relaxation constraints are never modified.
 """
 
 from __future__ import annotations
@@ -98,16 +98,24 @@ def _substrate_layers(atoms, substrate_symbol):
     return substrate_indices, layer_z, layer_indices
 
 
-def get_vibrational_frozen_mask(atoms, n_frozen_layers_vibrations=None, substrate_symbol="Se"):
+def get_vibrational_frozen_mask(
+    atoms, n_frozen_layers_vibrations=None, substrate_symbol="Se",
+    freeze_all_substrate_vibrations=False,
+):
     """
     Build the vibrational frozen mask without changing atoms.constraints.
 
-    Existing geometry-frozen atoms remain frozen.  In addition, the requested
-    number of bottom substrate layers are frozen for vibrational coordinates only.
-    Non-substrate atoms, including adsorbate, are not frozen by the layer setting.
+    Existing geometry-frozen atoms remain frozen. Either freeze all substrate atoms,
+    or freeze the requested number of bottom substrate layers. Non-substrate atoms,
+    including the adsorbate, are not frozen by this substrate-specific setting.
     """
     geometry_frozen = get_frozen_mask(atoms)
     frozen = geometry_frozen.copy()
+
+    substrate_indices, layers, layer_indices = _substrate_layers(atoms, substrate_symbol)
+    if freeze_all_substrate_vibrations:
+        frozen[np.asarray(substrate_indices, dtype=int)] = True
+        return frozen
 
     if n_frozen_layers_vibrations is None:
         return frozen
@@ -116,7 +124,6 @@ def get_vibrational_frozen_mask(atoms, n_frozen_layers_vibrations=None, substrat
     if n_layers < 0:
         raise ValueError("n_frozen_layers_vibrations must be >= 0")
 
-    substrate_indices, layers, layer_indices = _substrate_layers(atoms, substrate_symbol)
     if n_layers > len(layers):
         raise ValueError(
             f"n_frozen_layers_vibrations={n_layers} exceeds the "
@@ -134,11 +141,15 @@ def get_vibrational_frozen_mask(atoms, n_frozen_layers_vibrations=None, substrat
     return frozen
 
 
-def _make_vibrational_selection(atoms, n_frozen_layers_vibrations=None, substrate_symbol="Se"):
+def _make_vibrational_selection(
+    atoms, n_frozen_layers_vibrations=None, substrate_symbol="Se",
+    freeze_all_substrate_vibrations=False,
+):
     """Return the full-system vibrational mask and selected mobile indices."""
     frozen = get_vibrational_frozen_mask(
         atoms, n_frozen_layers_vibrations=n_frozen_layers_vibrations,
         substrate_symbol=substrate_symbol,
+        freeze_all_substrate_vibrations=freeze_all_substrate_vibrations,
     )
     mobile_indices = np.where(~frozen)[0]
     return mobile_indices, frozen
@@ -217,7 +228,8 @@ def _adsorbate_projections(phon_atoms, eigenvectors):
 
 
 def _empty_result(atoms, mobile_indices, frozen, cutoff, displacement,
-                  n_frozen_layers_vibrations, adsorbate_projection_threshold):
+                  n_frozen_layers_vibrations, adsorbate_projection_threshold,
+                  freeze_all_substrate_vibrations=False):
     """Return a valid zero-mode result for a fully frozen clean slab."""
     phon_atoms = atoms[mobile_indices].copy()
     phon_atoms.set_constraint([])
@@ -239,6 +251,7 @@ def _empty_result(atoms, mobile_indices, frozen, cutoff, displacement,
             None if n_frozen_layers_vibrations is None
             else int(n_frozen_layers_vibrations)
         ),
+        "freeze_all_substrate_vibrations": bool(freeze_all_substrate_vibrations),
         "force_calculations_include_frozen_atoms": True,
         "phonon_coordinate_space": "mobile atoms only",
         "phonon_backend": "ASE Vibrations",
@@ -318,7 +331,7 @@ def _calculate_phonons_custom(
     atoms, calc, mobile_indices, frozen, displacement, prefix,
     frequency_cutoff_cm, n_frozen_layers_vibrations,
     adsorbate_projection_threshold, nfree, symmetrize, fail_on_imaginary, verbose,
-    substrate_symbol="Se",
+    substrate_symbol="Se", freeze_all_substrate_vibrations=False,
 ):
     """Custom finite-difference Hessian/mode calculation."""
     print("Vibrational backend: custom project Hessian")
@@ -415,6 +428,7 @@ def _calculate_phonons_custom(
         "phonon_displacement_A": float(displacement),
         "adsorbate_projection_threshold": float(adsorbate_projection_threshold),
         "n_frozen_layers_vibrations": None if n_frozen_layers_vibrations is None else int(n_frozen_layers_vibrations),
+        "freeze_all_substrate_vibrations": bool(freeze_all_substrate_vibrations),
         "substrate_symbol": substrate_symbol,
         "nfree": int(nfree),
         "symmetrize": bool(symmetrize),
@@ -453,6 +467,7 @@ def calculate_phonons(
     frequency_cutoff_cm=1.0,
     symmetrize=True,
     n_frozen_layers_vibrations=None,
+    freeze_all_substrate_vibrations=False,
     adsorbate_projection_threshold=0.20,
     nfree=2,
     method="custom",
@@ -481,6 +496,7 @@ def calculate_phonons(
     mobile_indices, frozen = _make_vibrational_selection(
         atoms, n_frozen_layers_vibrations=n_frozen_layers_vibrations,
         substrate_symbol=substrate_symbol,
+        freeze_all_substrate_vibrations=freeze_all_substrate_vibrations,
     )
 
     symbols = atoms.get_chemical_symbols()
@@ -496,7 +512,9 @@ def calculate_phonons(
     print(f"Vibrational frozen {substrate_symbol} atoms: {int(frozen_substrate)}")
     print(f"Vibrationally mobile {substrate_symbol} atoms: {int(mobile_substrate)}")
     print(f"Vibrationally mobile adsorbate atoms: {int(mobile_adsorbate)}")
-    if n_frozen_layers_vibrations is not None:
+    if freeze_all_substrate_vibrations:
+        print(f"Vibrational frozen {substrate_symbol} atoms: ALL (layer count not used)")
+    elif n_frozen_layers_vibrations is not None:
         print(f"Vibrational frozen {substrate_symbol} layers:", int(n_frozen_layers_vibrations), f"of {len(layers)}")
     print("Mobile composition:", " ".join(
         f"{s}:{sum(1 for i in mobile_indices if symbols[i] == s)}"
@@ -509,6 +527,7 @@ def calculate_phonons(
     print(f"  phonon_displacement     : {displacement:.6f} Å")
     print(f"  frequency_cutoff_cm    : {frequency_cutoff_cm:.6f} cm^-1")
     print(f"  n_frozen_layers_vibrations: {n_frozen_layers_vibrations}")
+    print(f"  freeze_all_substrate_vibrations: {bool(freeze_all_substrate_vibrations)}")
     print(f"  adsorbate_projection_threshold: {adsorbate_projection_threshold:.3f}")
     print(f"  symmetrize              : {bool(symmetrize)}")
     print(f"  fail_on_imaginary       : {fail_on_imaginary}")
@@ -533,6 +552,7 @@ def calculate_phonons(
             "phonon_displacement_A": float(displacement),
             "adsorbate_projection_threshold": float(adsorbate_projection_threshold),
         "n_frozen_layers_vibrations": None if n_frozen_layers_vibrations is None else int(n_frozen_layers_vibrations),
+        "freeze_all_substrate_vibrations": bool(freeze_all_substrate_vibrations),
         "substrate_symbol": substrate_symbol,
             "force_calculations_include_frozen_atoms": True,
             "phonon_coordinate_space": "mobile atoms only",
@@ -558,6 +578,7 @@ def calculate_phonons(
             frequency_cutoff_cm, n_frozen_layers_vibrations,
             adsorbate_projection_threshold, nfree, symmetrize,
             fail_on_imaginary, verbose, substrate_symbol=substrate_symbol,
+            freeze_all_substrate_vibrations=freeze_all_substrate_vibrations,
         )
 
     print("Vibrational backend: ASE Vibrations")
@@ -647,6 +668,7 @@ def calculate_phonons(
         "frequency_cutoff_cm-1": cutoff, "phonon_displacement_A": float(displacement),
         "adsorbate_projection_threshold": float(adsorbate_projection_threshold),
         "n_frozen_layers_vibrations": None if n_frozen_layers_vibrations is None else int(n_frozen_layers_vibrations),
+        "freeze_all_substrate_vibrations": bool(freeze_all_substrate_vibrations),
         "substrate_symbol": substrate_symbol,
         "nfree": int(nfree),
         "symmetrize": bool(symmetrize),

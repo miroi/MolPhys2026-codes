@@ -18,6 +18,7 @@ class Config:
 
         self.n_frozen_layers = 2
         self.n_frozen_layers_vibrations = 6
+        self.freeze_all_substrate_vibrations = False
         self.fmax_slab = 0.01
         self.fmax_adsorbate = 0.005
         self.optimizer = "FIRE"
@@ -124,6 +125,10 @@ class Config:
         if "phonons" in cfg:
             p = cfg["phonons"]
             self.phonon_method = p.get("method", self.phonon_method).strip().lower()
+            self.freeze_all_substrate_vibrations = self._as_bool(
+                p.get("freeze_all_substrate_vibrations"),
+                self.freeze_all_substrate_vibrations,
+            )
             self.phonon_displacement = p.getfloat(
                 "phonon_displacement", self.phonon_displacement
             )
