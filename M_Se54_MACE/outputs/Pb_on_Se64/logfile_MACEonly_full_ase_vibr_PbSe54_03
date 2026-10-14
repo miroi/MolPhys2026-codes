@@ -1,0 +1,271 @@
+(mace_env) miroi@MIRO:~/work/projects/papers/MolPhys2026-codes/M_Se54_MACE/.python run_adsorption.py
+/home/miroi/miniconda3/envs/mace_env/lib/python3.13/site-packages/e3nn/o3/_wigner.py:10: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  _Jd, _W3j_flat, _W3j_indices = torch.load(os.path.join(os.path.dirname(__file__), 'constants.pt'))
+cuequivariance or cuequivariance_torch is not available. Cuequivariance acceleration will be disabled.
+
+======================================================================
+VERSION INFORMATION
+======================================================================
+Python : 3.13.14
+ASE    : 3.29.0
+MACE   : 0.3.16
+Torch  : 2.13.0+cu130
+DFT-D4 : 4.2.0
+CUDA available: True
+GPU: NVIDIA GeForce RTX 3050 Laptop GPU
+======================================================================
+Requested MACE device: cpu
+Using device: cpu
+MACE model: /home/miroi/.cache/mace/mace-mp-0b3-medium.model
+/home/miroi/miniconda3/envs/mace_env/lib/python3.13/site-packages/mace/calculators/mace.py:226: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  torch.load(f=model_path, map_location=device)
+DFT-D4 correction: DISABLED
+
+======================================================================
+SINGLE-ATOM ADSORPTION WORKFLOW
+======================================================================
+
+Reading slab-only structure: /home/miroi/work/projects/papers/MolPhys2026-codes/M_Se54_MACE/Se54_Dip.vasp
+
+SURFACE DETAILS
+------------------------------------------------------------
+Total atoms: 54
+Se atoms: 54
+Se layers: 6
+Frozen layers: 0
+Layer 1: z=2.052321 Å  9 Se  FREE/PARTIAL
+Layer 2: z=2.901967 Å  9 Se  FREE/PARTIAL
+Layer 3: z=3.802033 Å  9 Se  FREE/PARTIAL
+Layer 4: z=5.631112 Å  9 Se  FREE/PARTIAL
+Layer 5: z=6.525830 Å  9 Se  FREE/PARTIAL
+Layer 6: z=7.382626 Å  9 Se  FREE/PARTIAL
+
+Optimization finished
+Energy: -186.2491159133 eV
+Max force on mobile atoms: 0.009428 eV/Å
+Converged: YES
+
+Reading adsorbate-on-slab structure: /home/miroi/work/projects/papers/MolPhys2026-codes/M_Se54_MACE/Pb_Se54_Dip.vasp
+
+SURFACE DETAILS
+------------------------------------------------------------
+Total atoms: 55
+Se atoms: 54
+Se layers: 6
+Frozen layers: 0
+Layer 1: z=2.080280 Å  9 Se  FREE/PARTIAL
+Layer 2: z=2.931354 Å  9 Se  FREE/PARTIAL
+Layer 3: z=3.845938 Å  9 Se  FREE/PARTIAL
+Layer 4: z=5.625767 Å  9 Se  FREE/PARTIAL
+Layer 5: z=6.510410 Å  9 Se  FREE/PARTIAL
+Layer 6: z=7.415323 Å  9 Se  FREE/PARTIAL
+
+adsorbate–Se surface distance: 0.997030 Å
+adsorbate–Se surface distance BEFORE optimization: 0.997030 Å
+Minimum periodic Pb–Se distance to a top-layer surface atom BEFORE optimization: 2.767814 Å (indices 54–31)
+
+Optimization finished
+Energy: -190.1168426293 eV
+Max force on mobile atoms: 0.004609 eV/Å
+Converged: YES
+adsorbate–Se surface distance AFTER optimization: 0.938196 Å
+adsorbate–Se surface distance change: -0.058834 Å
+Minimum periodic Pb–Se distance to a top-layer surface atom AFTER optimization: 2.773687 Å (indices 54–31)
+Nearest Pb–Se distance change: +0.005873 Å
+
+======================================================================
+ENERGY SUMMARY
+======================================================================
+E(Pb/Se slab) : -190.1168426293 eV
+E(Se slab)    : -186.2491159133 eV
+E(Pb)            : -0.7764493200 eV
+ΔE_ads            : -3.0912773959 eV
+                  : -298.2629 kJ/mol
+
+Calculator energy decomposition
+MACE              : -3.091277395913 eV
+DFT-D4            :  0.000000000000 eV
+SUM components    : -3.091277395913 eV
+======================================================================
+Total MACE contribution to ΔE_ads : -3.0912773959 eV
+Total DFT-D4 contribution to ΔE_ads:  0.0000000000 eV
+
+PHONON CALCULATION
+----------------------------------------------------------------------
+Requested vibrational backend: ase
+Original atoms: 54
+Frozen atoms: 0
+Mobile atoms: 54
+Vibrational frozen Se atoms: 0
+Vibrationally mobile Se atoms: 54
+Vibrationally mobile adsorbate atoms: 0
+Vibrational frozen Se layers: 0 of 6
+Mobile composition: Se:54
+Force calculations include frozen atoms: YES
+Phonon coordinate space: mobile atoms only
+Adsorbate is included in the phonon system: NO
+Phonon configuration:
+  phonon_displacement     : 0.005000 Å
+  frequency_cutoff_cm    : 1.000000 cm^-1
+  n_frozen_layers_vibrations: 0
+  freeze_all_substrate_vibrations: False
+  adsorbate_projection_threshold: 0.200
+  symmetrize              : True
+  fail_on_imaginary       : True
+Vibrational backend: ASE Vibrations
+Raw Gamma modes: 162
+Positive modes kept (nu >= 1 cm^-1): 159
+No significant imaginary modes.
+Positive frequency range: 10.142–237.899 cm^-1
+Lowest positive modes (cm^-1): [10.1421 10.2593 13.8161 13.8269 17.4947 17.7065 17.7149 17.7298 17.7484
+ 17.7727]
+
+PHONON CALCULATION
+----------------------------------------------------------------------
+Requested vibrational backend: ase
+Original atoms: 55
+Frozen atoms: 0
+Mobile atoms: 55
+Vibrational frozen Se atoms: 0
+Vibrationally mobile Se atoms: 54
+Vibrationally mobile adsorbate atoms: 1
+Vibrational frozen Se layers: 0 of 5
+Mobile composition: Pb:1 Se:54
+Force calculations include frozen atoms: YES
+Phonon coordinate space: mobile atoms only
+Adsorbate is included in the phonon system: YES
+Phonon configuration:
+  phonon_displacement     : 0.005000 Å
+  frequency_cutoff_cm    : 1.000000 cm^-1
+  n_frozen_layers_vibrations: 0
+  freeze_all_substrate_vibrations: False
+  adsorbate_projection_threshold: 0.200
+  symmetrize              : True
+  fail_on_imaginary       : True
+Vibrational backend: ASE Vibrations
+Raw Gamma modes: 165
+Positive modes kept (nu >= 1 cm^-1): 162
+No significant imaginary modes.
+Positive frequency range: 5.718–248.640 cm^-1
+Lowest positive modes (cm^-1): [ 5.7184  9.9155 11.0169 11.7982 14.111  14.9068 15.4234 16.1465 16.9249
+ 17.3263]
+Pb atom index in mobile phonon coordinates: [54]
+Pb-dominated modes (Cartesian projection >= 0.200): 0
+Top 10 modes by Pb perpendicular (z) projection:
+  mode 113:    148.875 cm^-1; total adsorbate projection=0.0623; z projection=0.0345; z fraction of adsorbate motion=0.5539
+  mode   5:     11.017 cm^-1; total adsorbate projection=0.0238; z projection=0.0226; z fraction of adsorbate motion=0.9511
+  mode  71:     56.291 cm^-1; total adsorbate projection=0.0202; z projection=0.0158; z fraction of adsorbate motion=0.7796
+  mode  64:     51.912 cm^-1; total adsorbate projection=0.0200; z projection=0.0157; z fraction of adsorbate motion=0.7852
+  mode 111:    135.759 cm^-1; total adsorbate projection=0.0265; z projection=0.0152; z fraction of adsorbate motion=0.5729
+  mode  45:     42.875 cm^-1; total adsorbate projection=0.0331; z projection=0.0151; z fraction of adsorbate motion=0.4556
+  mode  43:     39.334 cm^-1; total adsorbate projection=0.0395; z projection=0.0140; z fraction of adsorbate motion=0.3536
+  mode 109:    124.438 cm^-1; total adsorbate projection=0.0661; z projection=0.0137; z fraction of adsorbate motion=0.2075
+  mode  29:     30.130 cm^-1; total adsorbate projection=0.0143; z projection=0.0127; z fraction of adsorbate motion=0.8862
+  mode   4:      9.915 cm^-1; total adsorbate projection=0.0275; z projection=0.0125; z fraction of adsorbate motion=0.4544
+Thermodynamics backend: ASE HarmonicThermo + IdealGasThermo
+
+======================================================================================
+Pb@slab vibrational thermodynamics (ASE HarmonicThermo)
+======================================================================================
+   Temp(K)           ZPE(eV)             F(eV)             U(eV)           S(eV/K)
+--------------------------------------------------------------------------------------
+/home/miroi/miniconda3/envs/mace_env/lib/python3.13/site-packages/ase/thermochemistry.py:73: RuntimeWarning: overflow encountered in exp
+  return self.energy / (np.exp(self.energy / kT) - 1.)
+/home/miroi/miniconda3/envs/mace_env/lib/python3.13/site-packages/ase/thermochemistry.py:79: RuntimeWarning: overflow encountered in exp
+  S_v = e / (np.exp(e) - 1.) - np.log(1. - np.exp(-e))
+      0.10      0.9916467425      0.9916467425      0.9916467425  0.0000000000e+00
+     50.00      0.9916467425      0.8023217731      1.2248736439  8.4510374162e-03
+    100.00      0.9916467425      0.1975163035      1.7274710660  1.5299547625e-02
+    200.00      0.9916467425     -1.7993445846      2.9724559404  2.3859002625e-02
+    298.15      0.9916467425     -4.4188799827      4.2853917579  2.9194270470e-02
+    400.00      0.9916467425     -7.6062129298      5.6764651757  3.3206695264e-02
+    500.00      0.9916467425    -11.0861456882      7.0542082793  3.6280707935e-02
+    600.00      0.9916467425    -14.8441175303      8.4379555710  3.8803455169e-02
+======================================================================================
+
+======================================================================
+ADSORPTION THERMODYNAMICS
+======================================================================
+T = 298.15 K
+p = 1 bar
+ΔE_ads          = -3.09127740 eV
+ΔZPE            = 0.00613723 eV
+ΔU_vib          = 0.07109549 eV
+H_gas thermal   = 0.06423143 eV
+ΔH_ads          = -3.07827611 eV
+S_gas           = 1.81763713e-03 eV/K
+ΔS_vib          = 9.15868905e-04 eV/K
+ΔS_ads          = -9.01768225e-04 eV/K
+ΔF_vib          = -0.19583360 eV
+μ_gas thermal   = -0.47769708 eV
+ΔG_ads          = -2.80941391 eV
+======================================================================
+
+======================================================================
+THERMODYNAMICS TEMPERATURE SCAN
+----------------------------------------------------------------------
+       T (K)       ΔH_ads (eV)       ΔS_ads (eV/K)       ΔG_ads (eV)
+----------------------------------------------------------------------
+        0.10       -3.08516171     -9.41318950e-05       -3.08515230
+       50.00       -3.08726422     -9.56370642e-04       -3.03944569
+      100.00       -3.08636314     -9.45659417e-04       -2.99179720
+      200.00       -3.08241938     -9.18612510e-04       -2.89869688
+      298.15       -3.07827611     -9.01768225e-04       -2.80941391
+      400.00       -3.07392878     -8.89226702e-04       -2.71823810
+      500.00       -3.06964344     -8.79664704e-04       -2.62981109
+      600.00       -3.06535012     -8.71837210e-04       -2.54224779
+----------------------------------------------------------------------
+Scan temperatures: 0.10, 50.00, 100.00, 200.00, 298.15, 400.00, 500.00, 600.00 K
+Scan output: adsorption_se54_dip_thermodynamics_scan.csv
+======================================================================
+
+======================================================================
+ΔG_ads = 0 CROSSING TEMPERATURE
+======================================================================
+No ΔG_ads = 0 crossing found.
+Search interval = [0.10, 600.00] K
+ΔG_ads at limits = -3.08515230, -2.54224779 eV
+No G_ads=0 sign change was found in the configured temperature interval.
+======================================================================
+
+Workflow completed.
+
+======================================================================
+FINAL RESULTS
+======================================================================
+E_slab                  : -186.2491159133 eV
+E_adsorbate_slab        : -190.1168426293 eV
+E_adsorbate             : -0.7764493200 eV
+E_ads                   : -3.0912773959 eV
+E_ads_MACE              : -3.0912773959 eV
+E_ads_DFTD4             :  0.0000000000 eV
+E_ads_component_sum     : -3.0912773959 eV
+ZPE_ads                 :  0.0061372265 eV
+delta_U_vib_thermal     :  0.0710954874 eV
+delta_U_vib_total       :  0.0772327139 eV
+H_gas_thermal           :  0.0642314260 eV
+H_ads                   : -3.0782761080 eV
+S_gas                   :  0.0018176371 eV/K
+delta_S_vib             :  0.0009158689 eV/K
+S_ads                   : -0.0009017682 eV/K
+delta_F_vib             : -0.1958336003 eV
+mu_gas_thermal          : -0.4776970843 eV
+G_ads                   : -2.8094139118 eV
+adsorbate_surface_distance_initial_A:  0.9970300815 Å
+adsorbate_surface_distance_final_A:  0.9381958329 Å
+adsorbate_surface_distance_change_A: -0.0588342486 Å
+nearest_adsorbate_surface_atom_distance_initial_A:  2.7678137767 Å
+nearest_adsorbate_surface_atom_distance_final_A:  2.7736867176 Å
+nearest_adsorbate_surface_atom_distance_change_A:  0.0058729409 Å
+substrate_n_atoms       :  54 atoms
+slab_n_mobile           :  54 atoms
+
+----------------------------------------------------------------------
+TEMPERATURE WHERE ΔG_ads = 0
+----------------------------------------------------------------------
+No ΔG_ads = 0 crossing found.
+Search interval     : [0.10, 600.00] K
+ΔG_ads at limits    : -3.08515230, -2.54224779 eV
+======================================================================
+
+Run finished successfully.

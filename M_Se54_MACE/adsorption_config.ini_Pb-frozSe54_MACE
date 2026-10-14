@@ -1,0 +1,87 @@
+[system]
+# The program reads these two VASP files directly.
+#adsorbate_file = Hg_Se54_Dip.vasp
+adsorbate_file = Pb_Se54_Dip.vasp
+slab_file = Se54_Dip.vasp
+substrate_symbol = Se
+
+#adsorbate_symbol = Hg
+adsorbate_symbol = Pb
+
+# Bottom Se layers frozen during geometry optimization.
+n_frozen_layers = 0
+
+# Bottom Se layers frozen only in the vibrational coordinate space.
+# Se54_Dip contains six Se layers. Set this to 6 to leave only Hg mobile
+# in the adsorbate-on-slab phonon calculation and no vibrational coordinates
+# for the clean slab.
+#n_frozen_layers_vibrations = 6
+n_frozen_layers_vibrations = 0
+
+fmax_slab = 0.01
+fmax_adsorbate = 0.005
+
+[calculation]
+mode = scan
+single_temperature = 298.15
+temperatures = 0.1,50,100,200,298.15,400,500,600
+calculate_g_ads_zero_crossing = true
+#pressure = 1e-3
+pressure = 1
+output_prefix = adsorption_se54_dip
+verbose = true
+save_trajectories = true
+
+[phonons]
+# Freeze every substrate atom for vibrations, independent of detected layer count.
+# When true, this takes precedence over n_frozen_layers_vibrations.
+#freeze_all_substrate_vibrations = false
+freeze_all_substrate_vibrations = true
+method = ase
+#method = custom
+ase_vibration_nfree = 2
+phonon_displacement = 0.005
+frequency_cutoff_cm = 1.0
+symmetrize = true
+fail_on_imaginary = true
+adsorbate_mode_projection_threshold = 0.20
+
+[thermodynamics]
+method = ase
+#method = custom
+include_zpe = true
+gas_reference_pressure = 1.0
+calculate_temperature_scan = false
+
+[runtime]
+# MACE execution device: cpu, cuda, or auto.
+# Use cpu to avoid CUDA/GPU errors; use cuda to require a GPU; auto selects CUDA when available.
+device = cpu
+#device = cuda
+cuda_clear_between_phonons = true
+
+[dispersion]
+# Additive DFT-D4 correction on top of MACE.
+# DFT-D4 parameters are defined for a reference DFT functional; for
+# MACE-MP-0b3 we use PBE as the explicit reference because the model is
+# trained on PBE(+U) data and contains no dispersion correction.
+#d4_enabled = true
+d4_enabled = false
+
+d4_method = PBE
+d4_scale = 1.0
+# Exact custom damping parameters used by the validated reference DFT-D4 run.
+d4_s6 = 1.0
+d4_s9 = 1.0
+d4_alp = 16.0
+d4_s8 = 0.95948085
+d4_a1 = 0.38574991
+d4_a2 = 4.80688534
+d4_zero_tolerance_eV = 1e-12
+
+[model]
+# Set this to the actual MACE-MP-0b3 model on your machine.
+# A command-line override is also supported:
+#   python run_adsorption.py --model /absolute/path/to/mace-mp-0b3-medium.model
+#path = /home/milias/.cache/mace/checkpoints/mace-mp-0b3-medium.model
+path = /home/miroi/.cache/mace/mace-mp-0b3-medium.model

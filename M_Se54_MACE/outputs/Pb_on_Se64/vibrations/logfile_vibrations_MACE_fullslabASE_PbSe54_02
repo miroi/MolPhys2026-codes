@@ -1,0 +1,40 @@
+(mace_env) miroi@MIRO:~/work/projects/papers/MolPhys2026-codes/M_Se54_MACE/.python visualize_vibrations.py
+
+Pb vibration visualization
+===========================
+Structure       : Pb_Se_opt.traj
+Phonon cache    : adsorption_se54_dip_Pb_slab_phonons
+Output directory: Pb_vibrations
+Full atoms      : 55
+Frozen atoms    : 0
+Frozen indices  : []
+Mobile indices  : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54]
+Mobile atoms    : 55
+Adsorbate symbol: Pb
+Adsorbate index : [54]
+Surface normal  : [0.0, 0.0, 1.0]
+Surface distance: 1.2398 Å (height above mean top-layer plane; not nearest-neighbour distance)
+Minimum periodic Pb–Se distance: 2.7737 Å (indices 54–31)
+Positive modes  : 162
+Positive range  : 5.718–248.640 cm^-1
+
+Selected modes:
+  mode 113:    148.875 cm^-1, Pb projection = 0.1485, Pb perpendicular fraction = 0.554, perpendicular weight = 3.451e-02
+  mode   5:     11.017 cm^-1, Pb projection = 0.0601, Pb perpendicular fraction = 0.951, perpendicular weight = 2.261e-02
+  mode  71:     56.291 cm^-1, Pb projection = 0.0514, Pb perpendicular fraction = 0.780, perpendicular weight = 1.578e-02
+
+Wrote: Pb_vibrations/Pb_mode_148.875_cm-1.traj
+       Pb_vibrations/Pb_mode_148.875_cm-1.xyz
+Wrote: Pb_vibrations/Pb_mode_011.017_cm-1.traj
+       Pb_vibrations/Pb_mode_011.017_cm-1.xyz
+Wrote: Pb_vibrations/Pb_mode_056.291_cm-1.traj
+       Pb_vibrations/Pb_mode_056.291_cm-1.xyz
+
+Equilibrium: Pb_vibrations/Pb_equilibrium.traj
+Diagnostics: Pb_vibrations/visualization_diagnostics.json
+Mode analysis: Pb_vibrations/mode_analysis.csv
+
+Open an animation with ASE GUI, for example:
+  ase gui Pb_vibrations/Pb_mode_148.875_cm-1.traj
+
+No new force calculations were performed.

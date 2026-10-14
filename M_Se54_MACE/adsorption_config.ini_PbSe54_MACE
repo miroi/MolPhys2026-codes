@@ -35,8 +35,8 @@ save_trajectories = true
 [phonons]
 # Freeze every substrate atom for vibrations, independent of detected layer count.
 # When true, this takes precedence over n_frozen_layers_vibrations.
-#freeze_all_substrate_vibrations = false
-freeze_all_substrate_vibrations = true
+freeze_all_substrate_vibrations = false
+#freeze_all_substrate_vibrations = true
 method = ase
 #method = custom
 ase_vibration_nfree = 2
