@@ -162,10 +162,10 @@ Use the following notation:
 
 - $M$: adsorbate atom, Hg or Pb.
 - $E_{\mathrm{M/Se54}}$, $E_{\mathrm{Se54}}$, $E_M$: electronic potential energies of the optimized adsorbate/slab, clean slab, and isolated atom, respectively.
-- $\{\tilde\nu_i^{\mathrm{M/Se54}}\}$, $\{\tilde\nu_j^{\mathrm{Se54}}\}$: positive harmonic frequencies in cm$^{-1}$ for the adsorbate/slab and clean slab vibrational models.
+- $\{\tilde\nu_i^{\mathrm{M/Se54}}\}$, $\{\tilde\nu_j^{\mathrm{Se54}}\}$: positive harmonic frequencies in $\mathrm{cm}^{-1}$ for the adsorbate/slab and clean slab vibrational models.
 - $T$: temperature in K; $P$: gas pressure in bar; $P^\circ$: configured reference pressure in bar.
 - $k_B$: Boltzmann constant; $h$: Planck constant; $c$: speed of light; $m_M$: mass of the adsorbate atom.
-- $\epsilon_i = h c \tilde\nu_i$: quantum energy of mode $i$. When $\tilde\nu_i$ is entered in cm$^{-1}$, use $hc$ in matching energy·cm units, or the code constant `HC_EV_CM` to obtain $\epsilon_i$ in eV.
+- $\epsilon_i = h c \tilde\nu_i$: quantum energy of mode $i$. When $\tilde\nu_i$ is entered in $\mathrm{cm}^{-1}$, use $hc$ in matching energy·cm units, or the code constant `HC_EV_CM` to obtain $\epsilon_i$ in eV.
 
 The code retains positive frequencies only in the thermochemistry routines. Zero and negative/imaginary frequencies are not included in the sums. The phonon stage separately reports mode and imaginary-frequency diagnostics; a frequency-filter setting may further affect which frequencies are supplied to thermochemistry. Check those diagnostics rather than assuming a stationary minimum from the thermochemistry output alone.
 
@@ -336,7 +336,7 @@ k_B\left[
 \right].
 $$
 
-Use consistent SI units in this expression: $P$ and $P^\circ$ in Pa, $\Lambda$ in m, and $k_B$ in J K$^{-1}$. The code configuration takes pressure in bar and converts it to Pa internally. The atom mass is selected from the configured adsorbate element, so Hg and Pb have different translational entropies.
+Use consistent SI units in this expression: $P$ and $P^\circ$ in Pa, $\Lambda$ in m, and $k_B$ in $\mathrm{J\,K^{-1}}$. The code configuration takes pressure in bar and converts it to Pa internally. The atom mass is selected from the configured adsorbate element, so Hg and Pb have different translational entropies.
 
 For an ideal monatomic gas, the thermal enthalpy relative to the isolated-atom electronic energy is
 
@@ -376,7 +376,7 @@ $$
 \Delta S_{\mathrm{vib}}(T)-S_M(T,P)}.
 $$
 
-The gas translational entropy is lost on adsorption in this model; the vibrational entropy change of the surface-bound system is added. Entropy is reported in eV K$^{-1}$ per adsorbed atom (the gas entropy routine converts from J K$^{-1}$ to eV K$^{-1}$).
+The gas translational entropy is lost on adsorption in this model; the vibrational entropy change of the surface-bound system is added. Entropy is reported in $\mathrm{eV\,K^{-1}}$ per adsorbed atom (the gas entropy routine converts from $\mathrm{J\,K^{-1}}$ to $\mathrm{eV\,K^{-1}}$).
 
 The principal reported Gibbs free-energy change is
 
@@ -400,9 +400,9 @@ The implementation calculates both routes and raises an error if they disagree b
 ### 4.6 Units, constants, and implementation details
 
 - Electronic energies, ZPE, $U$, $F$, $H$, $G$, and $\mu_{\mathrm{thermal}}$: eV per adsorbate.
-- Entropies: eV K$^{-1}$ per adsorbate in the thermochemistry result dictionaries; ideal-gas expressions are evaluated in SI units first and converted to eV K$^{-1}$.
-- Frequencies: cm$^{-1}$; temperature: K; configured pressures: bar.
-- The code uses $k_B$ in both J K$^{-1}$ and eV K$^{-1}$, $h$ in J s, the eV-to-joule conversion, and the $hc$ conversion appropriate for wavenumbers in cm$^{-1}$.
+- Entropies: $\mathrm{eV\,K^{-1}}$ per adsorbate in the thermochemistry result dictionaries; ideal-gas expressions are evaluated in SI units first and converted to $\mathrm{eV\,K^{-1}}$.
+- Frequencies: $\mathrm{cm}^{-1}$; temperature: K; configured pressures: bar.
+- The code uses $k_B$ in both $\mathrm{J\,K^{-1}}$ and $\mathrm{eV\,K^{-1}}$, $h$ in $\mathrm{J\,s}$, the eV-to-joule conversion, and the $hc$ conversion appropriate for wavenumbers in $\mathrm{cm}^{-1}$.
 - At very large $x_i=\epsilon_i/(k_BT)$, the thermal occupation and thermal logarithm tend to zero; the implementation guards these terms against numerical overflow. At very small $x_i$, the entropy expression uses a small-$x$ limit for numerical stability.
 - The `custom` and `ase` thermochemistry backends are alternative implementations. Both follow the same intended harmonic/ideal-gas decomposition, but small numerical differences can occur due to backend implementation and constants. Record the backend in any report.
 - `print_ase_adsorbateslab_thermo_batch` is a diagnostic of the adsorbate/slab vibrational system alone. Its table is not the adsorption free energy because it does not subtract the clean slab or include the gas reference.
