@@ -521,7 +521,20 @@ The code keeps the full physical structure in force evaluations while selecting 
 
 Mode projection is a diagnostic. It helps identify vibrations involving Hg or Pb, but thermochemistry uses the retained positive modes of the configured mobile-coordinate system, not only adsorbate-dominated modes.
 
-## 8. Validation and reproducibility checklist
+## 8. Vibrationally freezing the complete Se54 slab
+
+Set `freeze_all_substrate_vibrations = true` in the `[phonons]` section to freeze every atom identified as the substrate (`substrate_symbol`, `Se` for Se54) in the vibrational calculation. This option is independent of the automatically detected substrate-layer count, so it can be used even when `n_frozen_layers_vibrations` is larger than the number of layers detected from the structure.
+
+```ini
+[phonons]
+freeze_all_substrate_vibrations = true
+```
+
+When enabled, all Se atoms are excluded from the vibrational displacement/Hessian coordinates, while the adsorbate atom (Hg or Pb) remains mobile. For the clean Se54 slab, this leaves no mobile vibrational coordinates; for Hg/Se54 or Pb/Se54, only the adsorbate contributes mobile coordinates. The option affects vibrational selection only; it does not add or change geometry-optimization constraints.
+
+This setting takes precedence over `n_frozen_layers_vibrations`. When `freeze_all_substrate_vibrations = false`, the existing layer-based selection controlled by `n_frozen_layers_vibrations` is used instead.
+
+## 9. Validation and reproducibility checklist
 
 Before interpreting the numbers as quantitative adsorption thermodynamics:
 
@@ -536,7 +549,7 @@ Before interpreting the numbers as quantitative adsorption thermodynamics:
 9. For D4 runs, verify that `E_ads_component_sum` agrees with `E_ads`; retain the MACE and D4 components in reports.
 10. Archive the exact INI file, model path/version, package versions, and output logs with the reported results.
 
-## 9. Scope and limitations
+## 10. Scope and limitations
 
 - The vibrational model is Gamma-point only for the supplied finite slab.
 - Harmonic thermochemistry omits anharmonicity and temperature-dependent structural effects.
