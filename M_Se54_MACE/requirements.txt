@@ -1,0 +1,4 @@
+ASE==3.29.0
+mace-torch==0.3.16
+numpy
+dftd4==4.2.0

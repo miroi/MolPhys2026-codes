@@ -1,0 +1,35 @@
+(mace_env) miroi@MIRO:~/work/projects/adsorptions-on-various-surfaces/selenium_surface/trigonal_Se_surface/Se54_slabs/MLIPs/python_script/M_Se54_package/.python visualize_hg_vibrations.py
+
+Hg vibration visualization
+===========================
+Structure       : Hg_Se54_opt.traj
+Phonon cache    : Hg_Se54_phonons
+Output directory: Hg_vibrations
+Full atoms      : 55
+Frozen atoms    : 0
+Frozen indices  : []
+Mobile indices  : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54]
+Mobile atoms    : 55
+Hg mobile index : [54]
+Positive modes  : 162
+Positive range  : 9.836–231.570 cm^-1
+
+Selected modes:
+  mode   3:      9.836 cm^-1, Hg projection = 0.8402
+  mode   4:     11.877 cm^-1, Hg projection = 0.6714
+  mode  23:     31.010 cm^-1, Hg projection = 0.3520
+
+Wrote: Hg_vibrations/Hg_mode_009.836_cm-1.traj
+       Hg_vibrations/Hg_mode_009.836_cm-1.xyz
+Wrote: Hg_vibrations/Hg_mode_011.877_cm-1.traj
+       Hg_vibrations/Hg_mode_011.877_cm-1.xyz
+Wrote: Hg_vibrations/Hg_mode_031.010_cm-1.traj  <=============   Hg perperndicular vibration on sruface
+       Hg_vibrations/Hg_mode_031.010_cm-1.xyz
+
+Equilibrium: Hg_vibrations/Hg_Se54_equilibrium.traj
+Diagnostics: Hg_vibrations/visualization_diagnostics.json
+
+Open an animation with ASE GUI, for example:
+  ase gui Hg_vibrations/Hg_mode_009.836_cm-1.traj
+
+No new force calculations were performed.
