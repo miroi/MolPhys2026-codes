@@ -1,0 +1,40 @@
+(mace_env) miroi@MIRO:~/work/projects/papers/MolPhys2026-codes/M_Se54_MACE/.python visualize_vibrations.py --structure Hg_Se_opt.traj --phonon-dir adsorption_se54_dip_Hg_slab_phonons
+
+Hg vibration visualization
+===========================
+Structure       : Hg_Se_opt.traj
+Phonon cache    : adsorption_se54_dip_Hg_slab_phonons
+Output directory: Hg_vibrations
+Full atoms      : 55
+Frozen atoms    : 54
+Frozen indices  : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53]
+Mobile indices  : [54]
+Mobile atoms    : 1
+Adsorbate symbol: Hg
+Adsorbate index : [0]
+Surface normal  : [0.0, 0.0, 1.0]
+Surface distance: 2.3674 Å (height above mean top-layer plane; not nearest-neighbour distance)
+Minimum periodic Hg–Se distance: 3.5917 Å (indices 54–9)
+Positive modes  : 3
+Positive range  : 11.974–29.871 cm^-1
+
+Selected modes:
+  mode   0:     11.974 cm^-1, Hg projection = 1.0000, Hg perpendicular fraction = 0.017, perpendicular weight = 1.738e-02
+  mode   1:     14.587 cm^-1, Hg projection = 1.0000, Hg perpendicular fraction = 0.005, perpendicular weight = 5.126e-03
+  mode   2:     29.871 cm^-1, Hg projection = 1.0000, Hg perpendicular fraction = 0.977, perpendicular weight = 9.775e-01
+
+Wrote: Hg_vibrations/Hg_mode_011.974_cm-1.traj
+       Hg_vibrations/Hg_mode_011.974_cm-1.xyz
+Wrote: Hg_vibrations/Hg_mode_014.587_cm-1.traj
+       Hg_vibrations/Hg_mode_014.587_cm-1.xyz
+Wrote: Hg_vibrations/Hg_mode_029.871_cm-1.traj
+       Hg_vibrations/Hg_mode_029.871_cm-1.xyz
+
+Equilibrium: Hg_vibrations/Hg_equilibrium.traj
+Diagnostics: Hg_vibrations/visualization_diagnostics.json
+Mode analysis: Hg_vibrations/mode_analysis.csv
+
+Open an animation with ASE GUI, for example:
+  ase gui Hg_vibrations/Hg_mode_011.974_cm-1.traj
+
+No new force calculations were performed.
