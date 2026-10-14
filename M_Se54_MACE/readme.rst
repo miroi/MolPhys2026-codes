@@ -23,3 +23,13 @@ Top 3 modes by Hg perpendicular (z) projection:
   mode   2:     29.871 cm^-1, Hg projection = 1.0000, Hg perpendicular fraction = 0.977, perpendicular weight = 9.775e-01 <----------------
 
   ase gui Hg_vibrations/Hg_mode_029.871_cm-1.traj
+
+
+Pb@Se54
+-------
+
+full relax
+~~~~~~~~~~
+
+frozen slab
+~~~~~~~~~~~
