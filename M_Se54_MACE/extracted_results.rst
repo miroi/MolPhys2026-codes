@@ -54,3 +54,17 @@ Selected modes:
   mode   0:     59.463 cm^-1, Pb projection = 1.0000, Pb perpendicular fraction = 0.054, perpendicular weight = 5.386e-02
   mode   2:     81.120 cm^-1, Pb projection = 1.0000, Pb perpendicular fraction = 0.388, perpendicular weight = 3.875e-01
 
+Pb@slab vibrational thermodynamics (ASE HarmonicThermo) - MACE
+   Temp(K)           ZPE(eV)             F(eV)             U(eV)           S(eV/K)
+    298.15      0.0132287066     -0.0826612970      0.0778448028  5.3834009634e-04
+
+vs QE+D4, frozen slab
+https://github.com/dipayanster/backup/blob/master/d4qe_ads3/5.1_New_Vibration/PBE/Pb/log_slurm_job.1821502.n05p030.std_out_err
+
+ Total Energy (QE + D4):  -180038.414163 eV
+
+Temperature: 298.15 K
+  ZPE =   0.013196 eV  QE+D4: 0.0132287 eV
+  F   = -180038.497785 eV - (-180038.414163) eV = -0.083622 eV QE+D4:  -0.08266 eV
+  U   = -180038.336307 eV - (-180038.414163) eV = 0.077856 eV  QE+D4:   0.0778448 eV
+  S   = 5.415996e-04 eV/K  QE+D4:  5.3834009634e-04
