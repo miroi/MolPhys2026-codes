@@ -25,6 +25,26 @@ Top 3 modes by Hg perpendicular (z) projection:
   ase gui Hg_vibrations/Hg_mode_029.871_cm-1.traj
 
 
+Hg@slab vibrational thermodynamics (ASE HarmonicThermo)
+   Temp(K)           ZPE(eV)             F(eV)             U(eV)           S(eV/K)
+    298.15      0.0034984073     -0.1911623917      0.0771399424  8.9989043833e-04
+
+vs QE+D4, frozen slab https://github.com/dipayanster/backup/blob/master/d4qe_ads3/5.1_New_Vibration/PBE/Hg/log_slurm_job.1821483.n05p028.std_out_err
+Total Energy (QE + D4):  -182668.208864 eV
+
+Temperature: 298.15 K
+  ZPE =   0.003990 eV  vs MACE+D4: 0.0034984073
+  F   = -182668.388073 eV -(-182668.208864 eV) = -0.179209 eV eV vs MACE+D4: 
+  U   = -182668.131710 eV - (-182668.208864 eV) = 0.077154 eV vs MACE+D4: 0.0771399 eV
+  S   = 8.598456e-04 eV/K vs MACE+D4: 8.998904e-04
+
+QE+D4 Vibrational Analysis Summary:
+  #    meV     cm^-1
+  0    1.7      13.5  vs MACE+D4 = 11.974 cm^-1
+  1    2.5      19.9  vs MACE+D4 = 14.587 cm^-1
+  2    3.8      31.0  vs MACE+D4 =  29.871 cm^-1
+
+
 Pb@Se54
 -------
 
@@ -65,6 +85,12 @@ https://github.com/dipayanster/backup/blob/master/d4qe_ads3/5.1_New_Vibration/PB
 
 Temperature: 298.15 K
   ZPE =   0.013196 eV  QE+D4: 0.0132287 eV
-  F   = -180038.497785 eV - (-180038.414163) eV = -0.083622 eV QE+D4:  -0.08266 eV
-  U   = -180038.336307 eV - (-180038.414163) eV = 0.077856 eV  QE+D4:   0.0778448 eV
-  S   = 5.415996e-04 eV/K  QE+D4:  5.3834009634e-04
+  F   = -180038.497785 eV - (-180038.414163) eV = -0.083622 eV  vs MACE:  -0.08266 eV
+  U   = -180038.336307 eV - (-180038.414163) eV = 0.077856 eV   vs MACE:   0.0778448 eV
+  S   = 5.415996e-04 eV/K  vs MACE: 5.3834009634e-04
+
+QE+D4 Vibrational Analysis Summary:
+  #    meV     cm^-1
+  0    6.7      54.4 vs MACE= 59.463 cm^-1,
+  1    8.9      71.6 vs MACE=  72.810 cm^-1
+  2   10.8      86.9 vs MACE= 81.120 cm^-1
