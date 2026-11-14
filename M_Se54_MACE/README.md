@@ -207,10 +207,10 @@ This section documents the equations implemented in the source. Energies are rep
 
 Let $M$ be the adsorbate atom, $S$ the clean slab, and $M/S$ the combined adsorbate/slab system. The code evaluates:
 
-$
+$$
 \boxed{\Delta E_{\mathrm{ads}} =
 E_{M/S} - E_S - E_M}
-$
+$$
 
 where:
 
@@ -222,48 +222,48 @@ A negative value means the combined system is lower in energy than the separated
 
 For a calculator with components $c$, the component-resolved adsorption energy is:
 
-$
+$$
 \Delta E_{\mathrm{ads}}^{(c)}
 = E_{M/S}^{(c)} - E_S^{(c)} - E_M^{(c)}
-$
+$$
 
 and the implementation verifies:
 
-$
+$$
 \Delta E_{\mathrm{ads}} =
 \sum_c \Delta E_{\mathrm{ads}}^{(c)}
-$
+$$
 
 The conversion printed by `energies.py` is:
 
-$
+$$
 1\ \mathrm{eV} = 96.48533212\ \mathrm{kJ\,mol^{-1}}.
-$
+$$
 
 ### 5.2 MACE plus optional DFT-D4
 
 With D4 enabled, the production calculator is additive:
 
-$
+$$
 E_{\mathrm{total}}(\mathbf R)
 = E_{\mathrm{MACE}}(\mathbf R)
 + s_{\mathrm{D4}}E_{\mathrm{D4}}(\mathbf R)
-$
+$$
 
-$
+$$
 \mathbf F_{\mathrm{total}}(\mathbf R)
 = \mathbf F_{\mathrm{MACE}}(\mathbf R)
 + s_{\mathrm{D4}}\mathbf F_{\mathrm{D4}}(\mathbf R)
-$
+$$
 
 where $s_{\mathrm{D4}}$ is `d4_scale`. The same combined calculator is used for optimization and force-based phonon calculations. With D4 disabled, only MACE is used.
 
 The reported D4 adsorption contribution is a *difference of total D4 component energies*:
 
-$
+$$
 \Delta E_{\mathrm{ads}}^{\mathrm{D4}}
 = E_{M/S}^{\mathrm{D4}}-E_S^{\mathrm{D4}}-E_M^{\mathrm{D4}}.
-$
+$$
 
 This periodic-system contribution is not identical by definition to the separately printed adsorbate–surface pair diagnostic. The latter isolates pair terms involving the adsorbate at the optimized geometry; it is a diagnostic decomposition, not the total production adsorption correction.
 
@@ -271,10 +271,10 @@ This periodic-system contribution is not identical by definition to the separate
 
 The mobile atoms are optimized with ASE FIRE or BFGS. The stopping condition is the maximum force threshold:
 
-$
+$$
 \max_{i\in\mathrm{mobile}} \lVert \mathbf F_i\rVert
 \le f_{\max}.
-$
+$$
 
 The code checks both ASE's convergence flag and the final maximum force. A run that does not satisfy the threshold raises an error rather than silently accepting an unconverged geometry.
 
@@ -282,52 +282,52 @@ The code checks both ASE's convergence flag and the final maximum force. A run t
 
 For the custom phonon backend, the force-constant Hessian is constructed for mobile Cartesian coordinates. If $a,b$ label mobile Cartesian degrees of freedom, then:
 
-$
+$$
 H_{ab} = \frac{\partial^2 E}{\partial x_a\partial x_b}
 = -\frac{\partial F_a}{\partial x_b}.
-$
+$$
 
 For the two-point central difference used when `nfree = 2`:
 
-$
+$$
 H_{ab}\approx
 -\frac{F_a(x_b+\delta)-F_a(x_b-\delta)}{2\delta}.
-$
+$$
 
 For the higher-order four-point central difference:
 
-$
+$$
 H_{ab}\approx
 -\frac{F_a(x_b-2\delta)-8F_a(x_b-\delta)
 +8F_a(x_b+\delta)-F_a(x_b+2\delta)}{12\delta}.
-$
+$$
 
 Here $\delta$ is `phonon_displacement`. When symmetrization is enabled:
 
-$
+$$
 H \leftarrow \frac{H+H^\mathsf T}{2}.
-$
+$$
 
 The Hessian is mass weighted to form the dynamical matrix:
 
-$
+$$
 D_{ab}=\frac{H_{ab}}{\sqrt{m_a m_b}},
-$
+$$
 
 where $m_a$ and $m_b$ are the masses associated with the Cartesian degrees of freedom. In matrix notation, $D=M^{-1/2}HM^{-1/2}$. The implementation explicitly symmetrizes the mass-weighted matrix before diagonalization.
 
 The eigenproblem is:
 
-$
+$$
 D\mathbf e_i=\lambda_i\mathbf e_i.
-$
+$$
 
 The signed frequency is calculated from the eigenvalue as:
 
-$
+$$
 \tilde\nu_i =
 \operatorname{sgn}(\lambda_i)\sqrt{|\lambda_i|}\,C_{\mathrm{cm^{-1}}},
-$
+$$
 
 where $C_{\mathrm{cm^{-1}}}$ converts
 $\sqrt{\mathrm{eV\,\AA^{-2}\,amu^{-1}}}$ to cm⁻¹. Positive eigenvalues give real positive frequencies; negative eigenvalues give negative signed frequencies and indicate imaginary vibrational modes.
@@ -340,33 +340,33 @@ The ASE phonon backend delegates the finite-displacement calculation to ASE. Bot
 
 The custom dynamical-matrix eigenvectors are mass-weighted. To quantify the physical Cartesian motion, each eigenvector is converted as:
 
-$
+$$
 \mathbf u_i=M^{-1/2}\mathbf e_i.
-$
+$$
 
 For a mode $i$, the total adsorbate Cartesian participation is:
 
-$
+$$
 P_i^{M}=
 \frac{\sum_{a\in M}|\mathbf u_{i,a}|^2}
 {\sum_{a\in\mathrm{all}}|\mathbf u_{i,a}|^2}.
-$
+$$
 
 The adsorbate z-direction participation is:
 
-$
+$$
 P_i^{M,z}=
 \frac{\sum_{a\in M,z}|u_{i,a}|^2}
 {\sum_{a\in\mathrm{all}}|\mathbf u_{i,a}|^2},
-$
+$$
 
 and the fraction of adsorbate motion that is along z is:
 
-$
+$$
 Q_i^{M,z}=
 \frac{\sum_{a\in M,z}|u_{i,a}|^2}
 {\sum_{a\in M}|u_{i,a}|^2}.
-$
+$$
 
 A positive-frequency mode is classified as adsorbate-dominated when $P_i^M$ is at least `adsorbate_mode_projection_threshold`. The z projections are also reported to help identify modes with substantial motion normal to the slab. These projections are diagnostics; the thermochemistry uses the selected system frequency lists, not only the adsorbate-dominated subset.
 
@@ -374,77 +374,77 @@ A positive-frequency mode is classified as adsorbate-dominated when $P_i^M$ is a
 
 For each positive vibrational wavenumber $\tilde\nu_i$, define the quantum:
 
-$
+$$
 \epsilon_i=hc\tilde\nu_i,
 \qquad
 x_i=\frac{\epsilon_i}{k_BT}.
-$
+$$
 
 In the code, $hc$ is represented by `HC_EV_CM` in eV·cm, so $\epsilon_i$ is in eV.
 
 **Zero-point energy (ZPE):**
 
-$
+$$
 E_{\mathrm{ZPE}}=\frac12\sum_i\epsilon_i.
-$
+$$
 
 **Thermal vibrational internal energy excluding ZPE:**
 
-$
+$$
 U_{\mathrm{vib,th}}(T)
 =\sum_i\frac{\epsilon_i}{\exp(x_i)-1}.
-$
+$$
 
 **Vibrational entropy:**
 
-$
+$$
 S_{\mathrm{vib}}(T)
 =k_B\sum_i\left[
 \frac{x_i}{\exp(x_i)-1}
 -\ln(1-\exp(-x_i))
 \right].
-$
+$$
 
 **Thermal vibrational Helmholtz free-energy contribution excluding ZPE:**
 
-$
+$$
 F_{\mathrm{vib,th}}(T)
 =k_BT\sum_i\ln(1-\exp(-x_i)).
-$
+$$
 
 When ZPE is included, the total harmonic vibrational internal energy and free energy are:
 
-$
+$$
 U_{\mathrm{vib}}(T)=E_{\mathrm{ZPE}}+U_{\mathrm{vib,th}}(T),
-$
+$$
 
-$
+$$
 F_{\mathrm{vib}}(T)=E_{\mathrm{ZPE}}+F_{\mathrm{vib,th}}(T).
-$
+$$
 
 The code filters out non-positive frequencies before evaluating these expressions. It also uses numerically stable exponential/logarithmic functions and asymptotic handling for very small or very large $x_i$.
 
 For the adsorption process, the differential vibrational quantities are formed from the adsorbate/slab system minus the clean slab:
 
-$
+$$
 \Delta E_{\mathrm{ZPE}}=
 E_{\mathrm{ZPE}}^{M/S}-E_{\mathrm{ZPE}}^{S},
-$
+$$
 
-$
+$$
 \Delta U_{\mathrm{vib,th}}=
 U_{\mathrm{vib,th}}^{M/S}-U_{\mathrm{vib,th}}^{S},
-$
+$$
 
-$
+$$
 \Delta S_{\mathrm{vib}}=
 S_{\mathrm{vib}}^{M/S}-S_{\mathrm{vib}}^{S},
-$
+$$
 
-$
+$$
 \Delta F_{\mathrm{vib}}=
 F_{\mathrm{vib}}^{M/S}-F_{\mathrm{vib}}^{S}.
-$
+$$
 
 If `include_zpe = false`, the differential ZPE is set to zero in the adsorption thermodynamics and removed from the vibrational free-energy difference. The raw ZPE difference is still retained in the diagnostic output.
 
@@ -454,36 +454,36 @@ The gas reference is one isolated adsorbate atom with the mass selected from `ad
 
 The thermal de Broglie wavelength is:
 
-$
+$$
 \Lambda(T)=\frac{h}{\sqrt{2\pi m k_BT}}.
-$
+$$
 
 At reference pressure $p^\circ$, the Sackur–Tetrode translational entropy per atom is:
 
-$
+$$
 S_g^\circ(T)=k_B\left[
 \ln\left(\frac{k_BT}{p^\circ\Lambda^3}\right)+\frac52
 \right].
-$
+$$
 
 At pressure $p$:
 
-$
+$$
 S_g(T,p)=S_g^\circ(T)-k_B\ln\left(\frac{p}{p^\circ}\right).
-$
+$$
 
 The ideal monatomic-gas thermal enthalpy relative to the isolated-atom electronic energy is:
 
-$
+$$
 H_{g,\mathrm{th}}(T)=\frac52 k_BT.
-$
+$$
 
 The corresponding thermal chemical-potential correction is:
 
-$
+$$
 \mu_{g,\mathrm{th}}(T,p)
 =H_{g,\mathrm{th}}(T)-TS_g(T,p).
-$
+$$
 
 The code performs the translational entropy calculation in SI units and converts J/K to eV/K. Pressure and reference pressure are specified in bar and converted to Pa internally.
 
@@ -491,7 +491,7 @@ The code performs the translational entropy calculation in SI units and converts
 
 The adsorption enthalpy is assembled as:
 
-$
+$$
 \boxed{
 \Delta H_{\mathrm{ads}}(T,p)=
 \Delta E_{\mathrm{ads}}
@@ -499,39 +499,39 @@ $
 +\Delta U_{\mathrm{vib,th}}(T)
 -H_{g,\mathrm{th}}(T)
 }
-$
+$$
 
 when ZPE is enabled. If ZPE is disabled, $\Delta E_{\mathrm{ZPE}}=0$.
 
 The adsorption entropy is:
 
-$
+$$
 \boxed{
 \Delta S_{\mathrm{ads}}(T,p)=
 \Delta S_{\mathrm{vib}}(T)-S_g(T,p)
 }
-$
+$$
 
 and the Gibbs free energy is:
 
-$
+$$
 \boxed{
 \Delta G_{\mathrm{ads}}(T,p)=
 \Delta H_{\mathrm{ads}}(T,p)
 -T\Delta S_{\mathrm{ads}}(T,p)
 }
-$
+$$
 
 The implementation independently evaluates the equivalent expression:
 
-$
+$$
 \boxed{
 \Delta G_{\mathrm{ads}}(T,p)=
 \Delta E_{\mathrm{ads}}
 +\Delta F_{\mathrm{vib}}(T)
 -\mu_{g,\mathrm{th}}(T,p)
 }
-$
+$$
 
 and raises an error if the two routes disagree beyond the backend-specific numerical tolerance. This is an internal thermodynamic consistency check, not an independent physical validation of the harmonic or ideal-gas approximations.
 
@@ -539,19 +539,19 @@ and raises an error if the two routes disagree beyond the backend-specific numer
 
 For every configured temperature $T_k$, the program reuses the already calculated frequencies and evaluates:
 
-$
+$$
 \{\Delta H_{\mathrm{ads}}(T_k),\,
 \Delta S_{\mathrm{ads}}(T_k),\,
 \Delta G_{\mathrm{ads}}(T_k)\}.
-$
+$$
 
 The scan is a thermodynamic post-processing step; it does not repeat geometry optimization or phonon calculations at every temperature.
 
 The root search seeks:
 
-$
+$$
 \Delta G_{\mathrm{ads}}(T^*,p)=0.
-$
+$$
 
 It first checks the configured temperature grid for an exact zero or a sign-changing adjacent pair. If a sign change is bracketed, it applies bisection. The implementation uses a maximum of 100 iterations, a temperature interval tolerance of $10^{-4}$ K, and a Gibbs-energy tolerance of $10^{-10}$ eV. If no sign change exists in the configured interval, it reports no crossing; it does not extrapolate beyond the interval.
 
