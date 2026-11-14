@@ -244,17 +244,13 @@ $$
 
 With D4 enabled, the production calculator is additive:
 
-$$
-E_{\mathrm{total}}(\mathbf R)
-= E_{\mathrm{MACE}}(\mathbf R)
-+ s_{\mathrm{D4}}E_{\mathrm{D4}}(\mathbf R)
-$$
+$
+E_{\mathrm{total}}(\mathbf R)=E_{\mathrm{MACE}}(\mathbf R)+s_{\mathrm{D4}}E_{\mathrm{D4}}(\mathbf R)
+$
 
-$$
-\mathbf F_{\mathrm{total}}(\mathbf R)
-= \mathbf F_{\mathrm{MACE}}(\mathbf R)
-+ s_{\mathrm{D4}}\mathbf F_{\mathrm{D4}}(\mathbf R)
-$$
+$
+\mathbf F_{\mathrm{total}}(\mathbf R)=\mathbf F_{\mathrm{MACE}}(\mathbf R)+s_{\mathrm{D4}}\mathbf F_{\mathrm{D4}}(\mathbf R)
+$
 
 where $s_{\mathrm{D4}}$ is `d4_scale`. The same combined calculator is used for optimization and force-based phonon calculations. With D4 disabled, only MACE is used.
 
@@ -324,10 +320,9 @@ $$
 
 The signed frequency is calculated from the eigenvalue as:
 
-$$
-\tilde\nu_i =
-\operatorname{sgn}(\lambda_i)\sqrt{|\lambda_i|}\,C_{\mathrm{cm^{-1}}},
-$$
+$
+\tilde{\nu}_i=\mathrm{sgn}(\lambda_i)\sqrt{|\lambda_i|}\,C_{\mathrm{cm}^{-1}}
+$
 
 where $C_{\mathrm{cm^{-1}}}$ converts
 $\sqrt{\mathrm{eV\,\AA^{-2}\,amu^{-1}}}$ to cm⁻¹. Positive eigenvalues give real positive frequencies; negative eigenvalues give negative signed frequencies and indicate imaginary vibrational modes.
