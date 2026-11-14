@@ -365,7 +365,9 @@ $$
 
 A positive-frequency mode is classified as adsorbate-dominated when $P_i^M$ is at least `adsorbate_mode_projection_threshold`. The z projections are also reported to help identify modes with substantial motion normal to the slab. These projections are diagnostics; the thermochemistry uses the selected system frequency lists, not only the adsorbate-dominated subset.
 
-### 5.6 Harmonic vibrational thermodynamics
+### 5.6 Total harmonic vibrational thermodynamics
+
+We use the **total harmonic approximation**: each positive-frequency normal mode contributes its zero-point energy and its temperature-dependent harmonic excitation. Thus, the vibrational internal energy and Helmholtz free energy below include the zero-point contribution whenever `include_zpe = true`; no separate `,th` subscript is needed.
 
 For each positive vibrational wavenumber $\tilde\nu_i$, define the quantum:
 
@@ -383,14 +385,16 @@ $$
 E_{\mathrm{ZPE}}=\frac12\sum_i\epsilon_i.
 $$
 
-**Thermal vibrational internal energy excluding ZPE:**
+**Total harmonic vibrational internal energy:**
 
 $$
-U_{\mathrm{vib,th}}(T)
-=\sum_i\frac{\epsilon_i}{\exp(x_i)-1}.
+U_{\mathrm{vib}}(T)
+=\sum_i\epsilon_i\left[
+\frac12+\frac{1}{\exp(x_i)-1}
+\right].
 $$
 
-**Vibrational entropy:**
+**Harmonic vibrational entropy:**
 
 $$
 S_{\mathrm{vib}}(T)
@@ -400,21 +404,13 @@ S_{\mathrm{vib}}(T)
 \right].
 $$
 
-**Thermal vibrational Helmholtz free-energy contribution excluding ZPE:**
+**Total harmonic vibrational Helmholtz free energy:**
 
 $$
-F_{\mathrm{vib,th}}(T)
-=k_BT\sum_i\ln(1-\exp(-x_i)).
-$$
-
-When ZPE is included, the total harmonic vibrational internal energy and free energy are:
-
-$$
-U_{\mathrm{vib}}(T)=E_{\mathrm{ZPE}}+U_{\mathrm{vib,th}}(T),
-$$
-
-$$
-F_{\mathrm{vib}}(T)=E_{\mathrm{ZPE}}+F_{\mathrm{vib,th}}(T).
+F_{\mathrm{vib}}(T)
+=\sum_i\left[
+\frac12\epsilon_i+k_BT\ln(1-\exp(-x_i))
+\right].
 $$
 
 The code filters out non-positive frequencies before evaluating these expressions. It also uses numerically stable exponential/logarithmic functions and asymptotic handling for very small or very large $x_i$.
@@ -427,8 +423,8 @@ E_{\mathrm{ZPE}}^{M/S}-E_{\mathrm{ZPE}}^{S},
 $$
 
 $$
-\Delta U_{\mathrm{vib,th}}=
-U_{\mathrm{vib,th}}^{M/S}-U_{\mathrm{vib,th}}^{S},
+\Delta U_{\mathrm{vib}}=
+U_{\mathrm{vib}}^{M/S}-U_{\mathrm{vib}}^{S},
 $$
 
 $$
@@ -441,7 +437,7 @@ $$
 F_{\mathrm{vib}}^{M/S}-F_{\mathrm{vib}}^{S}.
 $$
 
-If `include_zpe = false`, the differential ZPE is set to zero in the adsorption thermodynamics and removed from the vibrational free-energy difference. The raw ZPE difference is still retained in the diagnostic output.
+If `include_zpe = false`, the zero-point part is omitted from the total harmonic internal-energy and free-energy differences used in the adsorption thermodynamics. The raw ZPE difference is still retained in the diagnostic output.
 
 ### 5.7 Ideal monatomic-gas reference
 
@@ -470,29 +466,29 @@ $$
 The ideal monatomic-gas thermal enthalpy relative to the isolated-atom electronic energy is:
 
 $$
-H_{g,\mathrm{th}}(T)=\frac52 k_BT.
+H_g(T)=\frac52 k_BT.
 $$
 
 The corresponding thermal chemical-potential correction is:
 
 $$
-\mu_{g,\mathrm{th}}(T,p)
-=H_{g,\mathrm{th}}(T)-TS_g(T,p).
+\mu_g(T,p)
+=H_g(T)-TS_g(T,p).
 $$
 
 The code performs the translational entropy calculation in SI units and converts J/K to eV/K. Pressure and reference pressure are specified in bar and converted to Pa internally.
 
 ### 5.8 Adsorption enthalpy, entropy, and Gibbs free energy
 
-The adsorption enthalpy is assembled as:
+The adsorption enthalpy is assembled from the electronic adsorption energy, the differential total-harmonic vibrational internal energy, and the ideal monatomic-gas thermal enthalpy:
 
 $$
 \boxed{
 \Delta H_{\mathrm{ads}}(T,p)=
 \Delta E_{\mathrm{ads}}
 +\Delta E_{\mathrm{ZPE}}
-+\Delta U_{\mathrm{vib,th}}(T)
--H_{g,\mathrm{th}}(T)
++\Delta U_{\mathrm{vib}}(T)
+-H_g(T)
 }
 $$
 
@@ -517,14 +513,14 @@ $$
 }
 $$
 
-The implementation independently evaluates the equivalent expression:
+The implementation independently evaluates the equivalent expression using the total harmonic vibrational free energy and the ideal-gas thermal chemical-potential correction:
 
 $$
 \boxed{
 \Delta G_{\mathrm{ads}}(T,p)=
 \Delta E_{\mathrm{ads}}
 +\Delta F_{\mathrm{vib}}(T)
--\mu_{g,\mathrm{th}}(T,p)
+-\mu_g(T,p)
 }
 $$
 
@@ -570,7 +566,7 @@ Interpret key outputs as follows:
 - `E_ads` is the total electronic adsorption energy from the production calculator.
 - `E_ads_MACE` and `E_ads_DFTD4` are component contributions when the calculator decomposition is available.
 - `ZPE_ads` is the differential ZPE correction, not the absolute ZPE of the combined system.
-- `delta_U_vib_thermal` excludes ZPE.
+- `delta_U_vib_thermal` is the code's diagnostic thermal-only part of the vibrational energy; `delta_U_vib_total` includes ZPE when `include_zpe = true`.
 - `delta_U_vib_total` follows the `include_zpe` choice.
 - `S_gas` is the ideal-gas translational entropy at the requested pressure.
 - `H_ads`, `S_ads`, and `G_ads` are adsorption thermodynamic quantities under the stated reference model.
