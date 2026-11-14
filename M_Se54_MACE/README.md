@@ -1,40 +1,56 @@
-# Hg and Pb adsorption on Se54: Modular MACE workflow
+# Single-Atom Adsorption on Se(0001)-Type Slabs with MACE and Optional DFT-D4
 
-## Purpose and scope
+## 1. Project purpose
 
-This README documents the supplied modular code for single-atom **Hg/Se54** and **Pb/Se54** adsorption. The workflow reads pre-built VASP structures, optimizes the clean slab and adsorbate/slab independently, evaluates adsorption energies, calculates constrained Gamma-point harmonic vibrations, evaluates adsorption thermodynamics, scans temperature, and searches for a temperature where $\Delta G_{\mathrm{ads}}=0$.
+This repository implements a modular atomistic workflow for calculating the adsorption energetics and harmonic thermodynamics of one isolated metal atom (the supplied examples use Hg or Pb) on a selenium slab.
 
-The project includes optional additive DFT-D4 dispersion on top of MACE. Results depend on the selected configuration, especially whether D4 is enabled and how many Se layers are included in the vibrational coordinate space. The bundled logs include multiple settings and must not be treated as one directly interchangeable data set.
+The calculation is organized into the following stages:
 
-This is a finite-supercell, Gamma-point harmonic model, not a Brillouin-zone-converged phonon calculation.
+1. Read the clean-slab and adsorbate/slab structures from VASP files.
+2. Identify selenium layers and optionally constrain the bottom layers.
+3. Construct a MACE interatomic-potential calculator, optionally combined additively with DFT-D4.
+4. Relax the clean slab and adsorbate/slab structures.
+5. Evaluate the isolated adsorbate reference energy and the electronic adsorption energy.
+6. Calculate vibrational frequencies for the clean and adsorbate-covered systems.
+7. Add harmonic vibrational and ideal monatomic-gas contributions to obtain adsorption enthalpy, entropy, and Gibbs free energy.
+8. Optionally scan temperature and locate a temperature where the calculated adsorption free energy changes sign.
+9. Save numerical results, diagnostic files, logs, and (when enabled) optimization trajectories.
 
-## 1. Package contents
+The code uses ASE for atomic structures, constraints, optimization, calculator interfaces, and the optional ASE vibrational/thermochemistry backend. MACE supplies the machine-learning interatomic potential. DFT-D4 is an optional additive dispersion correction.
 
-Main modules:
+> **Scope.** This is a single-adsorbate, harmonic-vibration plus ideal-monatomic-gas model. It is not a molecular-gas model, a liquid-phase model, or an anharmonic free-energy calculation. The results depend on the supplied structures, the selected MACE model, the constraints, the phonon coordinate selection, and the thermodynamic reference pressure.
 
-- `run_adsorption.py`: command-line entry point and workflow launcher.
-- `config.py`: reads and validates the INI configuration.
-- `surface.py`: reads VASP structures and handles substrate-layer constraints and adsorbate–surface distances.
-- `optimization.py`: geometry optimization.
-- `calculator.py`: MACE calculator and optional additive DFT-D4 calculator; reports energy components and D4 diagnostics.
-- `energies.py`: electronic adsorption-energy calculations.
-- `phonons.py`: custom or ASE finite-displacement vibrational calculation, frequency filtering, imaginary-mode checks, and adsorbate-mode projection.
-- `thermodynamics.py`: harmonic vibrational thermodynamics and monatomic ideal-gas thermodynamics for the selected adsorbate.
-- `workflow.py`: orchestrates optimization, energy, phonon, thermochemistry, temperature scan, and zero-crossing search.
-- `visualize_vibrations.py`: analyzes an existing ASE vibration cache and writes mode trajectories; it does not run new force calculations.
-- `test_dftd4_ase.py`: standalone smoke test for DFT-D4 and additive energy/force behavior.
+## 2. Repository layout
 
-Input structures included in the archive:
+The principal application is in `M_Se54_MACE/`.
 
-- `Se54_Dip.vasp`: clean 54-Se slab.
-- `Hg_Se54_Dip.vasp`: Hg plus the same Se54 slab.
-- `Pb_Se54_Dip.vasp`: Pb plus the same Se54 slab.
+| File | Responsibility |
+|---|---|
+| `run_adsorption.py` | Main executable; loads configuration, builds calculator, runs workflow, prints final scalar results |
+| `cli.py` | Command-line argument parsing |
+| `config.py` | Defaults, INI parsing, path resolution, and input validation |
+| `constants.py` | Physical constants and unit conversions |
+| `calculator.py` | MACE and optional DFT-D4 calculator construction, component energies, activity/decomposition checks, device/cache handling |
+| `surface.py` | VASP structure loading, selenium layer detection, constraints, and adsorption distances |
+| `optimization.py` | FIRE/BFGS geometry optimization and convergence checks |
+| `energies.py` | Electronic adsorption energy and component decomposition |
+| `phonons.py` | ASE or custom finite-difference vibrational calculations, mode analysis, and adsorbate projections |
+| `thermodynamics.py` | Harmonic vibrational and ideal-gas thermochemistry |
+| `workflow.py` | End-to-end orchestration, temperature scan, root search, and result assembly |
+| `visualize_vibrations.py` | Post-processing and visualization of vibrational modes |
+| `test_dftd4_ase.py` | Small DFT-D4/ASE diagnostic test |
+| `adsorption_config.ini*` | Example configuration files for different systems/protocols |
+| `Se54_Dip.vasp` | Clean slab input |
+| `Hg_Se54_Dip.vasp`, `Pb_Se54_Dip.vasp` | Adsorbate/slab inputs |
+| `outputs/` | Example logs and vibration output data |
 
-The supplied structure files contain 54 Se substrate atoms and one adsorbate atom in each adsorbate/slab system (55 atoms total).
+The `outputs/` directory contains example calculation records. They are not automatically regenerated by merely importing the package.
 
-## 2. Environment and execution
+## 3. Installation and execution
 
-The package requirements are listed in `requirements.txt`:
+### 3.1 Environment
+
+The pinned core dependencies are listed in `requirements.txt`:
 
 ```text
 ASE==3.29.0
@@ -43,516 +59,572 @@ numpy
 dftd4==4.2.0
 ```
 
-Activate an environment containing these dependencies and point the configuration to an existing MACE model file. The bundled INI files contain a machine-specific model path; update `[model] path` for your installation or pass `--model`.
-
-Run Hg using the Hg configuration:
+A typical setup is:
 
 ```bash
-python run_adsorption.py --config adsorption_config.ini_HgSe54_MACE-D4
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-Run Pb using the Pb configuration:
+Use a Python/PyTorch environment compatible with the installed MACE release and the desired CPU or CUDA execution. DFT-D4 is required only when `d4_enabled = true`.
+
+### 3.2 Select an explicit configuration and model
+
+Run from the `M_Se54_MACE/` directory. The model path must point to a model file available on the machine executing the calculation.
 
 ```bash
-python run_adsorption.py --config adsorption_config.ini_PbSe54_MACE
+python run_adsorption.py \
+  --config adsorption_config.ini \
+  --model /absolute/path/to/mace-mp-0b3-medium.model
 ```
 
-The primary `adsorption_config.ini` in the archive is currently configured for Pb, with six Se layers frozen in the vibrational coordinate space and D4 enabled. Note that the archived file `adsorption_config.ini_HgSe54_MACE-D4` currently has `d4_enabled = false` despite its filename, and `adsorption_config.ini_PbSe54_MACE` also has D4 disabled. To reproduce the logged MACE+D4 runs, explicitly set `d4_enabled = true` in the chosen INI file (or use `--d4`). Always pass the intended config explicitly so that the calculation does not depend on which config happens to be the default.
+The repository contains multiple INI files. Always pass the intended configuration explicitly; otherwise the run may use a different configuration than expected.
 
-Useful command-line overrides supported by `run_adsorption.py` include:
+Examples:
 
 ```bash
-python run_adsorption.py --config adsorption_config.ini_HgSe54_MACE-D4 --model /absolute/path/to/mace-mp-0b3-medium.model
-python run_adsorption.py --config adsorption_config.ini_PbSe54_MACE --mode single --temperature 298.15 --pressure 1.0
+# Pb/Se example using its supplied configuration
+python run_adsorption.py \
+  --config adsorption_config.ini_PbSe54_MACE \
+  --model /absolute/path/to/mace-mp-0b3-medium.model
+
+# Hg/Se example with the D4-labelled configuration
+python run_adsorption.py \
+  --config adsorption_config.ini_HgSe54_MACE-D4 \
+  --model /absolute/path/to/mace-mp-0b3-medium.model
+
+# Single-temperature calculation
+python run_adsorption.py \
+  --config adsorption_config.ini_PbSe54_MACE \
+  --mode single --temperature 298.15 --pressure 1.0 \
+  --model /absolute/path/to/mace-mp-0b3-medium.model
 ```
 
-The CLI also supports `--d4`/`--no-d4`, `--d4-method`, and `--d4-scale` overrides. Use `python run_adsorption.py --help` to inspect the exact options available in the checked-out version.
+Inspect the exact command-line options in the checked-out version with:
 
-## 3. Configuration: selecting Hg or Pb on Se54
-
-The configuration is element-aware. The `[system]` section must keep the substrate as Se and set the adsorbate file and symbol consistently.
-
-### Hg/Se54
-
-```ini
-[system]
-adsorbate_file = Hg_Se54_Dip.vasp
-slab_file = Se54_Dip.vasp
-substrate_symbol = Se
-adsorbate_symbol = Hg
-n_frozen_layers = 0
-n_frozen_layers_vibrations = 0
-fmax_slab = 0.01
-fmax_adsorbate = 0.005
+```bash
+python run_adsorption.py --help
 ```
 
-### Pb/Se54
+The CLI supports configuration/model selection, calculation mode, temperature and pressure overrides, and D4 enable/disable/method/scale overrides. Command-line values override the corresponding loaded configuration values.
 
-```ini
-[system]
-adsorbate_file = Pb_Se54_Dip.vasp
-slab_file = Se54_Dip.vasp
-substrate_symbol = Se
-adsorbate_symbol = Pb
-n_frozen_layers = 0
-n_frozen_layers_vibrations = 0
-fmax_slab = 0.01
-fmax_adsorbate = 0.005
-```
+### 3.3 CPU and GPU
 
-Keep the remaining calculation, phonon, thermodynamics, runtime, dispersion, and model sections consistent with the desired protocol. In particular:
+The `[runtime]` section accepts:
 
-- `n_frozen_layers` controls the bottom Se layers fixed during geometry optimization.
-- `n_frozen_layers_vibrations` controls the bottom Se layers excluded from the vibrational coordinate space. It must be at least `n_frozen_layers`.
-- `adsorbate_symbol` is used by the workflow to set the adsorbate symbol for the calculator diagnostics, vibrational projections, and gas-phase mass used in thermodynamics.
-- `output_prefix` determines the names of the generated results and phonon files. Use distinct prefixes for Hg and Pb and for different calculation settings to avoid overwriting results.
-- `pressure` and `gas_reference_pressure` are in bar.
-- `phonon_displacement` is in Å, `frequency_cutoff_cm` in cm⁻¹, temperature in K, and energies in eV.
-- `method = ase` or `method = custom` can be selected independently under `[phonons]` and `[thermodynamics]`.
+- `device = cpu`: force CPU execution.
+- `device = cuda`: require CUDA; the program raises an error if CUDA is unavailable.
+- `device = auto`: use CUDA when available, otherwise CPU.
 
-### Example calculation settings
+`cuda_clear_between_phonons` controls memory-cleanup behavior between phonon stages. It does not change the physical model.
 
-The supplied configurations use ASE vibrations and ASE thermochemistry, `ase_vibration_nfree = 2`, `phonon_displacement = 0.005`, `frequency_cutoff_cm = 1.0`, `include_zpe = true`, pressure 1 bar, and a temperature grid containing 0.1, 50, 100, 200, 298.15, 400, 500, and 600 K. The configuration's temperature grid must contain positive temperatures.
+## 4. Configuration reference
 
-For a frozen-slab vibrational calculation, set:
+Configuration is read from an INI file. Relative structure and model paths are resolved relative to the directory containing that INI file.
 
-```ini
-n_frozen_layers_vibrations = 6
-```
+### `[system]`
 
-The Se54 slab has six Se layers. This setting leaves only the adsorbate mobile in the adsorbate/slab vibrational coordinate space and leaves no mobile vibrational coordinates for the clean slab. For a full-slab calculation, set `n_frozen_layers_vibrations = 0` (provided `n_frozen_layers = 0`). These are different physical approximations and their thermodynamic results should be reported separately.
+| Setting | Meaning |
+|---|---|
+| `slab_file` | Clean substrate structure (VASP format) |
+| `adsorbate_file` | Structure containing the substrate and exactly one adsorbate |
+| `substrate_symbol` | Element symbol identifying substrate atoms (Se in the examples) |
+| `adsorbate_symbol` | Element symbol identifying the adsorbate (Hg or Pb in the examples) |
+| `n_frozen_layers` | Number of bottom substrate layers fixed during geometry optimization |
+| `n_frozen_layers_vibrations` | Number of bottom substrate layers omitted from the vibrational coordinate space |
+| `fmax_slab` | Maximum force threshold for clean-slab relaxation, eV/Å |
+| `fmax_adsorbate` | Maximum force threshold for adsorbate/slab relaxation, eV/Å |
 
-## 4. Energy and thermodynamics definitions
+The code identifies layers by sorting substrate atoms by their Cartesian z coordinate and splitting successive groups when the z gap exceeds 0.5 Å. The layer coordinate is the mean z value of the atoms in that group. This is a geometry-specific layer heuristic, not a general crystallographic layer finder.
 
-For an adsorbate $M$, where $M$ is Hg or Pb, the electronic adsorption energy is
+The optimization and vibration constraints are separate. A layer may be allowed to relax during optimization but then be omitted from the phonon coordinate space. `n_frozen_layers_vibrations` must not be smaller than the number of layers frozen during optimization. The optional `freeze_all_substrate_vibrations` switch can instead freeze every substrate atom for vibrations.
 
-$$
-\Delta E_{\mathrm{ads}} =
-E_{M/\mathrm{Se54}} - E_{\mathrm{Se54}} - E_M.
-$$
+### `[calculation]`
 
-Negative values indicate energetically favorable adsorption relative to the isolated atom and clean slab, under the selected calculator.
+| Setting | Meaning |
+|---|---|
+| `mode` | Workflow mode; `single` evaluates one temperature and `scan` evaluates the configured temperature grid |
+| `single_temperature` | Temperature used in single mode, K |
+| `temperatures` | Comma-separated positive temperatures used for a scan and for the configured root-search interval, K |
+| `calculate_g_ads_zero_crossing` | Whether to search for a zero of adsorption Gibbs free energy |
+| `pressure` | Gas pressure, bar |
+| `output_prefix` | Prefix for generated output files |
+| `verbose` | Enables additional diagnostic output |
+| `save_trajectories` | Writes ASE optimization trajectories when true |
+| `optimizer` | Geometry optimizer, `FIRE` or `BFGS` |
 
-When D4 is enabled, the calculator is additive:
+In the supplied main configuration, the temperature grid is `0.1, 50, 100, 200, 298.15, 400, 500, 600 K`, pressure is 1 bar, and the mode is `scan`. Check the particular INI file before assuming these values apply to another example configuration.
 
-$$
-E_{\mathrm{total}} = E_{\mathrm{MACE}} + E_{\mathrm{D4}},
-$$
+### `[phonons]`
 
-and the output reports `E_ads_MACE`, `E_ads_DFTD4`, and `E_ads_component_sum` as diagnostics. `E_ads` is the adsorption energy from the production calculator. The component sum should agree with `E_ads` within numerical tolerance.
+| Setting | Meaning |
+|---|---|
+| `method` | `ase` or `custom` vibrational backend |
+| `phonon_displacement` | Finite-displacement amplitude for the custom Hessian, Å |
+| `frequency_cutoff_cm` | Positive-frequency cutoff and significant-imaginary-mode threshold, cm⁻¹ |
+| `symmetrize` | Replace numerical Hessian by its symmetric part |
+| `ase_vibration_nfree` | ASE finite-difference stencil setting (`2` or the supported higher-order option) |
+| `fail_on_imaginary` | Raise an error if significant imaginary modes are detected |
+| `adsorbate_mode_projection_threshold` | Minimum Cartesian adsorbate participation for classifying an adsorbate-dominated mode |
+| `freeze_all_substrate_vibrations` | Restrict vibrational coordinates to adsorbate atoms, regardless of layer count |
 
-The workflow combines the electronic energy, the vibrational free-energy difference, and the thermal chemical potential of the monatomic gas reference:
+The selected vibrational coordinate set is defined by the mobile atoms, not by changing the electronic calculator. Frozen atoms remain in the full structure and can still contribute to forces/energies; their coordinates are excluded from the Hessian diagonalization.
 
-$$
-\Delta G_{\mathrm{ads}}(T,P)
-= \Delta E_{\mathrm{ads}} + \Delta F_{\mathrm{vib}}(T)
-- \mu_{M,\mathrm{thermal}}(T,P).
-$$
+### `[thermodynamics]`
 
-The thermodynamic mass is selected from `adsorbate_symbol`, so Hg and Pb use their own atomic masses in the ideal-gas translational contribution. No gas-phase rotational or molecular-vibrational contribution is used for either monatomic reference. The workflow also evaluates the equivalent $\Delta H_{\mathrm{ads}}-T\Delta S_{\mathrm{ads}}$ route and checks the two results for consistency.
+| Setting | Meaning |
+|---|---|
+| `method` | `ase` or `custom` thermochemistry backend |
+| `include_zpe` | Include the differential zero-point energy in adsorption thermochemistry |
+| `gas_reference_pressure` | Standard/reference pressure for the ideal-gas contribution, bar |
+| `calculate_temperature_scan` | Configuration flag for temperature-scan behavior |
 
-The temperature crossing is only reported if a sign change in $\Delta G_{\mathrm{ads}}$ is found within the configured search interval. “No crossing found” is a valid outcome and must not be interpreted as a calculation failure.
+The phonon backend and thermodynamics backend are independent choices. For example, one may use ASE vibrations to obtain frequencies and either ASE or custom formulas to evaluate thermodynamic functions.
 
+### `[dispersion]`
 
-### 4.1 Thermochemical model and state definitions
+| Setting | Meaning |
+|---|---|
+| `d4_enabled` | Add DFT-D4 to MACE when true |
+| `d4_method` | Reference-method label retained in configuration/diagnostics |
+| `d4_scale` | Overall multiplicative factor applied to D4 energy and forces |
+| `d4_s6`, `d4_s9`, `d4_alp`, `d4_s8`, `d4_a1`, `d4_a2` | Explicit D4 damping parameters |
+| `d4_zero_tolerance_eV` | Numerical tolerance used by D4 activity/decomposition diagnostics |
 
-The reported thermochemistry is a **harmonic-vibration + ideal monatomic-gas reference** model. It combines the electronic adsorption energy from the selected calculator with vibrational corrections for the adsorbate/slab and clean slab, and with the translational entropy and thermal enthalpy of an isolated gas-phase Hg or Pb atom. It is not a liquid-phase, molecular-gas, or fully anharmonic treatment.
+The implementation passes the explicit damping-parameter set to DFT-D4. The code comments explain that the installed DFT-D4 4.2.x API treats method-based parameter loading and explicit damping parameters as mutually exclusive. Consequently, `d4_method` is a descriptive/reference setting; the custom parameter values are what are passed to the D4 calculator.
 
-Use the following notation:
+### `[model]`
 
-- $M$: adsorbate atom, Hg or Pb.
-- $E_{\mathrm{M/Se54}}$, $E_{\mathrm{Se54}}$, $E_M$: electronic potential energies of the optimized adsorbate/slab, clean slab, and isolated atom, respectively.
-- $\{\tilde\nu_i^{\mathrm{M/Se54}}\}$, $\{\tilde\nu_j^{\mathrm{Se54}}\}$: positive harmonic frequencies in $\mathrm{cm}^{-1}$ for the adsorbate/slab and clean slab vibrational models.
-- $T$: temperature in K; $P$: gas pressure in bar; $P^\circ$: configured reference pressure in bar.
-- $k_B$: Boltzmann constant; $h$: Planck constant; $c$: speed of light; $m_M$: mass of the adsorbate atom.
-- $\epsilon_i = h c \tilde\nu_i$: quantum energy of mode $i$. When $\tilde\nu_i$ is entered in $\mathrm{cm}^{-1}$, use $hc$ in matching energy·cm units, or the code constant `HC_EV_CM` to obtain $\epsilon_i$ in eV.
+`path` is the MACE model file. It can be overridden with `--model`.
 
-The code retains positive frequencies only in the thermochemistry routines. Zero and negative/imaginary frequencies are not included in the sums. The phonon stage separately reports mode and imaginary-frequency diagnostics; a frequency-filter setting may further affect which frequencies are supplied to thermochemistry. Check those diagnostics rather than assuming a stationary minimum from the thermochemistry output alone.
+## 5. Physical and numerical formulas
 
-### 4.2 Electronic adsorption energy
+This section documents the equations implemented in the source. Energies are reported in eV per adsorbate atom unless stated otherwise; entropies are in eV K⁻¹ per adsorbate atom. Frequencies are expressed as wavenumbers in cm⁻¹.
 
-The electronic adsorption energy is
+### 5.1 Electronic adsorption energy
 
-$$
+Let \(M\) be the adsorbate atom, \(S\) the clean slab, and \(M/S\) the combined adsorbate/slab system. The code evaluates:
+
+\[
 \boxed{\Delta E_{\mathrm{ads}} =
-E_{\mathrm{M/Se54}} - E_{\mathrm{Se54}} - E_M}
-$$
+E_{M/S} - E_S - E_M}
+\]
 
-with units of eV per adsorbed atom in this model. A negative value means that the combined adsorbate/slab system is lower in electronic energy than the separated clean slab and isolated atom evaluated with the same calculator and compatible settings.
+where:
 
-For the additive calculator,
+- \(E_{M/S}\): potential energy of the optimized adsorbate/slab structure;
+- \(E_S\): potential energy of the optimized clean slab;
+- \(E_M\): potential energy of one isolated adsorbate atom.
 
-$$
-E_X = E_{X,\mathrm{MACE}} + E_{X,\mathrm{D4}},
-$$
+A negative value means the combined system is lower in energy than the separated clean slab and isolated atom under the chosen calculator and reference convention. The isolated atom is calculated using the same calculator stack as the slab systems.
 
-so the component-resolved adsorption energy is
+For a calculator with components \(c\), the component-resolved adsorption energy is:
 
-$$
-\Delta E_{\mathrm{ads},k} =
-E_{\mathrm{M/Se54},k} - E_{\mathrm{Se54},k} - E_{M,k},
+\[
+\Delta E_{\mathrm{ads}}^{(c)}
+= E_{M/S}^{(c)} - E_S^{(c)} - E_M^{(c)}
+\]
+
+and the implementation verifies:
+
+\[
+\Delta E_{\mathrm{ads}} =
+\sum_c \Delta E_{\mathrm{ads}}^{(c)}
+\]
+
+The conversion printed by `energies.py` is:
+
+\[
+1\ \mathrm{eV} = 96.48533212\ \mathrm{kJ\,mol^{-1}}.
+\]
+
+### 5.2 MACE plus optional DFT-D4
+
+With D4 enabled, the production calculator is additive:
+
+\[
+E_{\mathrm{total}}(\mathbf R)
+= E_{\mathrm{MACE}}(\mathbf R)
++ s_{\mathrm{D4}}E_{\mathrm{D4}}(\mathbf R)
+\]
+
+\[
+\mathbf F_{\mathrm{total}}(\mathbf R)
+= \mathbf F_{\mathrm{MACE}}(\mathbf R)
++ s_{\mathrm{D4}}\mathbf F_{\mathrm{D4}}(\mathbf R)
+\]
+
+where \(s_{\mathrm{D4}}\) is `d4_scale`. The same combined calculator is used for optimization and force-based phonon calculations. With D4 disabled, only MACE is used.
+
+The reported D4 adsorption contribution is a *difference of total D4 component energies*:
+
+\[
+\Delta E_{\mathrm{ads}}^{\mathrm{D4}}
+= E_{M/S}^{\mathrm{D4}}-E_S^{\mathrm{D4}}-E_M^{\mathrm{D4}}.
+\]
+
+This periodic-system contribution is not identical by definition to the separately printed adsorbate–surface pair diagnostic. The latter isolates pair terms involving the adsorbate at the optimized geometry; it is a diagnostic decomposition, not the total production adsorption correction.
+
+### 5.3 Geometry optimization
+
+The mobile atoms are optimized with ASE FIRE or BFGS. The stopping condition is the maximum force threshold:
+
+\[
+\max_{i\in\mathrm{mobile}} \lVert \mathbf F_i\rVert
+\le f_{\max}.
+\]
+
+The code checks both ASE's convergence flag and the final maximum force. A run that does not satisfy the threshold raises an error rather than silently accepting an unconverged geometry.
+
+### 5.4 Vibrational Hessian from finite differences
+
+For the custom phonon backend, the force-constant Hessian is constructed for mobile Cartesian coordinates. If \(a,b\) label mobile Cartesian degrees of freedom, then:
+
+\[
+H_{ab} = \frac{\partial^2 E}{\partial x_a\partial x_b}
+= -\frac{\partial F_a}{\partial x_b}.
+\]
+
+For the two-point central difference used when `nfree = 2`:
+
+\[
+H_{ab}\approx
+-\frac{F_a(x_b+\delta)-F_a(x_b-\delta)}{2\delta}.
+\]
+
+For the higher-order four-point central difference:
+
+\[
+H_{ab}\approx
+-\frac{F_a(x_b-2\delta)-8F_a(x_b-\delta)
++8F_a(x_b+\delta)-F_a(x_b+2\delta)}{12\delta}.
+\]
+
+Here \(\delta\) is `phonon_displacement`. When symmetrization is enabled:
+
+\[
+H \leftarrow \frac{H+H^\mathsf T}{2}.
+\]
+
+The Hessian is mass weighted to form the dynamical matrix:
+
+\[
+D_{ab}=\frac{H_{ab}}{\sqrt{m_a m_b}},
+\]
+
+where \(m_a\) and \(m_b\) are the masses associated with the Cartesian degrees of freedom. In matrix notation, \(D=M^{-1/2}HM^{-1/2}\). The implementation explicitly symmetrizes the mass-weighted matrix before diagonalization.
+
+The eigenproblem is:
+
+\[
+D\mathbf e_i=\lambda_i\mathbf e_i.
+\]
+
+The signed frequency is calculated from the eigenvalue as:
+
+\[
+\tilde\nu_i =
+\operatorname{sgn}(\lambda_i)\sqrt{|\lambda_i|}\,C_{\mathrm{cm^{-1}}},
+\]
+
+where \(C_{\mathrm{cm^{-1}}}\) converts
+\(\sqrt{\mathrm{eV\,\AA^{-2}\,amu^{-1}}}\) to cm⁻¹. Positive eigenvalues give real positive frequencies; negative eigenvalues give negative signed frequencies and indicate imaginary vibrational modes.
+
+The custom implementation keeps modes above the configured positive cutoff. Modes below the negative cutoff are counted as significant imaginary modes. If `fail_on_imaginary = true`, their presence stops the calculation. The cutoff is a numerical/model choice and should be reported with the results.
+
+The ASE phonon backend delegates the finite-displacement calculation to ASE. Both backends ultimately provide frequency lists to the thermochemistry stage.
+
+### 5.5 Adsorbate-mode projections
+
+The custom dynamical-matrix eigenvectors are mass-weighted. To quantify the physical Cartesian motion, each eigenvector is converted as:
+
+\[
+\mathbf u_i=M^{-1/2}\mathbf e_i.
+\]
+
+For a mode \(i\), the total adsorbate Cartesian participation is:
+
+\[
+P_i^{M}=
+\frac{\sum_{a\in M}|\mathbf u_{i,a}|^2}
+{\sum_{a\in\mathrm{all}}|\mathbf u_{i,a}|^2}.
+\]
+
+The adsorbate z-direction participation is:
+
+\[
+P_i^{M,z}=
+\frac{\sum_{a\in M,z}|u_{i,a}|^2}
+{\sum_{a\in\mathrm{all}}|\mathbf u_{i,a}|^2},
+\]
+
+and the fraction of adsorbate motion that is along z is:
+
+\[
+Q_i^{M,z}=
+\frac{\sum_{a\in M,z}|u_{i,a}|^2}
+{\sum_{a\in M}|u_{i,a}|^2}.
+\]
+
+A positive-frequency mode is classified as adsorbate-dominated when \(P_i^M\) is at least `adsorbate_mode_projection_threshold`. The z projections are also reported to help identify modes with substantial motion normal to the slab. These projections are diagnostics; the thermochemistry uses the selected system frequency lists, not only the adsorbate-dominated subset.
+
+### 5.6 Harmonic vibrational thermodynamics
+
+For each positive vibrational wavenumber \(\tilde\nu_i\), define the quantum:
+
+\[
+\epsilon_i=hc\tilde\nu_i,
 \qquad
-\Delta E_{\mathrm{ads}}=\sum_k \Delta E_{\mathrm{ads},k}.
-$$
+x_i=\frac{\epsilon_i}{k_BT}.
+\]
 
-The D4 component is a correction to the energy model, not a separate thermodynamic entropy term. The total and component-sum checks should agree numerically.
+In the code, \(hc\) is represented by `HC_EV_CM` in eV·cm, so \(\epsilon_i\) is in eV.
 
-### 4.3 Harmonic vibrational thermodynamics
+**Zero-point energy (ZPE):**
 
-For a harmonic mode with frequency $\tilde\nu_i>0$, define
+\[
+E_{\mathrm{ZPE}}=\frac12\sum_i\epsilon_i.
+\]
 
-$$
-\epsilon_i = h c \tilde\nu_i,\qquad
-x_i = \frac{\epsilon_i}{k_B T}.
-$$
+**Thermal vibrational internal energy excluding ZPE:**
 
-All sums below are over the positive frequencies supplied to the thermochemistry calculation.
+\[
+U_{\mathrm{vib,th}}(T)
+=\sum_i\frac{\epsilon_i}{\exp(x_i)-1}.
+\]
 
-**Zero-point energy (ZPE)**
+**Vibrational entropy:**
 
-$$
-E_{\mathrm{ZPE}} = \frac{1}{2}\sum_i \epsilon_i
-= \frac{1}{2}\sum_i h c\tilde\nu_i.
-$$
-
-The raw ZPE correction for adsorption is
-
-$$
-\Delta E_{\mathrm{ZPE}}^{\mathrm{raw}} =
-E_{\mathrm{ZPE}}^{\mathrm{M/Se54}} -
-E_{\mathrm{ZPE}}^{\mathrm{Se54}}.
-$$
-
-With `include_zpe = true`, $\Delta E_{\mathrm{ZPE}}=\Delta E_{\mathrm{ZPE}}^{\mathrm{raw}}$; with `include_zpe = false`, the applied correction is set to zero. The raw value can still be reported diagnostically.
-
-**Thermal vibrational internal energy excluding ZPE**
-
-$$
-U_{\mathrm{vib,thermal}}(T)
-= \sum_i \frac{\epsilon_i}{\exp(x_i)-1}.
-$$
-
-The adsorption difference is
-
-$$
-\Delta U_{\mathrm{vib,thermal}} =
-U_{\mathrm{vib,thermal}}^{\mathrm{M/Se54}} -
-U_{\mathrm{vib,thermal}}^{\mathrm{Se54}}.
-$$
-
-The total harmonic vibrational internal energy, when ZPE is included, is
-
-$$
-U_{\mathrm{vib}}(T) =
-E_{\mathrm{ZPE}} + U_{\mathrm{vib,thermal}}(T).
-$$
-
-For the `include_zpe = false` convention, the ZPE term is omitted from the reported total used in adsorption thermochemistry. The output `delta_U_vib_total` is the applied ZPE difference plus the thermal difference when ZPE is enabled, and is just the thermal difference when it is disabled.
-
-**Harmonic vibrational entropy**
-
-$$
-S_{\mathrm{vib}}(T) =
-k_B \sum_i \left[
+\[
+S_{\mathrm{vib}}(T)
+=k_B\sum_i\left[
 \frac{x_i}{\exp(x_i)-1}
--\ln\!\left(1-\exp(-x_i)\right)
+-\ln(1-\exp(-x_i))
 \right].
-$$
+\]
 
-The entropy difference is
+**Thermal vibrational Helmholtz free-energy contribution excluding ZPE:**
 
-$$
-\Delta S_{\mathrm{vib}} =
-S_{\mathrm{vib}}^{\mathrm{M/Se54}} -
-S_{\mathrm{vib}}^{\mathrm{Se54}}.
-$$
+\[
+F_{\mathrm{vib,th}}(T)
+=k_BT\sum_i\ln(1-\exp(-x_i)).
+\]
 
-ZPE has no entropy contribution in the harmonic oscillator model.
+When ZPE is included, the total harmonic vibrational internal energy and free energy are:
 
-**Harmonic vibrational Helmholtz free energy**
+\[
+U_{\mathrm{vib}}(T)=E_{\mathrm{ZPE}}+U_{\mathrm{vib,th}}(T),
+\]
 
-With ZPE included,
+\[
+F_{\mathrm{vib}}(T)=E_{\mathrm{ZPE}}+F_{\mathrm{vib,th}}(T).
+\]
 
-$$
-F_{\mathrm{vib}}(T) =
-\sum_i\left[
-\frac{\epsilon_i}{2}
-+k_B T\ln\!\left(1-\exp(-x_i)\right)
+The code filters out non-positive frequencies before evaluating these expressions. It also uses numerically stable exponential/logarithmic functions and asymptotic handling for very small or very large \(x_i\).
+
+For the adsorption process, the differential vibrational quantities are formed from the adsorbate/slab system minus the clean slab:
+
+\[
+\Delta E_{\mathrm{ZPE}}=
+E_{\mathrm{ZPE}}^{M/S}-E_{\mathrm{ZPE}}^{S},
+\]
+
+\[
+\Delta U_{\mathrm{vib,th}}=
+U_{\mathrm{vib,th}}^{M/S}-U_{\mathrm{vib,th}}^{S},
+\]
+
+\[
+\Delta S_{\mathrm{vib}}=
+S_{\mathrm{vib}}^{M/S}-S_{\mathrm{vib}}^{S},
+\]
+
+\[
+\Delta F_{\mathrm{vib}}=
+F_{\mathrm{vib}}^{M/S}-F_{\mathrm{vib}}^{S}.
+\]
+
+If `include_zpe = false`, the differential ZPE is set to zero in the adsorption thermodynamics and removed from the vibrational free-energy difference. The raw ZPE difference is still retained in the diagnostic output.
+
+### 5.7 Ideal monatomic-gas reference
+
+The gas reference is one isolated adsorbate atom with the mass selected from `adsorbate_symbol`. The implemented gas contribution is translational; it does not include molecular rotation or molecular internal vibration.
+
+The thermal de Broglie wavelength is:
+
+\[
+\Lambda(T)=\frac{h}{\sqrt{2\pi m k_BT}}.
+\]
+
+At reference pressure \(p^\circ\), the Sackur–Tetrode translational entropy per atom is:
+
+\[
+S_g^\circ(T)=k_B\left[
+\ln\left(\frac{k_BT}{p^\circ\Lambda^3}\right)+\frac52
 \right].
-$$
+\]
 
-Equivalently, $F_{\mathrm{vib}}=U_{\mathrm{vib}}-T S_{\mathrm{vib}}$. If ZPE is excluded, the $\epsilon_i/2$ term is omitted:
+At pressure \(p\):
 
-$$
-F_{\mathrm{vib,no\,ZPE}}(T) =
-\sum_i k_B T\ln\!\left(1-\exp(-x_i)\right).
-$$
+\[
+S_g(T,p)=S_g^\circ(T)-k_B\ln\left(\frac{p}{p^\circ}\right).
+\]
 
-The vibrational free-energy correction used for adsorption is
+The ideal monatomic-gas thermal enthalpy relative to the isolated-atom electronic energy is:
 
-$$
-\boxed{\Delta F_{\mathrm{vib}} =
-F_{\mathrm{vib}}^{\mathrm{M/Se54}} -
-F_{\mathrm{vib}}^{\mathrm{Se54}}}
-$$
+\[
+H_{g,\mathrm{th}}(T)=\frac52 k_BT.
+\]
 
-using the same ZPE convention for both systems. The clean-slab contribution is subtracted; it is not assumed to be zero unless the chosen vibrational model has no mobile slab modes.
+The corresponding thermal chemical-potential correction is:
 
-### 4.4 Ideal monatomic gas reference
+\[
+\mu_{g,\mathrm{th}}(T,p)
+=H_{g,\mathrm{th}}(T)-TS_g(T,p).
+\]
 
-The gas reference is one ideal monatomic atom. It therefore has translational contributions but no molecular rotational or internal vibrational contributions.
+The code performs the translational entropy calculation in SI units and converts J/K to eV/K. Pressure and reference pressure are specified in bar and converted to Pa internally.
 
-The thermal de Broglie wavelength is
+### 5.8 Adsorption enthalpy, entropy, and Gibbs free energy
 
-$$
-\Lambda(T)=\frac{h}{\sqrt{2\pi m_M k_B T}}.
-$$
+The adsorption enthalpy is assembled as:
 
-At reference pressure $P^\circ$, the ideal-gas translational entropy per atom is
+\[
+\boxed{
+\Delta H_{\mathrm{ads}}(T,p)=
+\Delta E_{\mathrm{ads}}
++\Delta E_{\mathrm{ZPE}}
++\Delta U_{\mathrm{vib,th}}(T)
+-H_{g,\mathrm{th}}(T)
+}
+\]
 
-$$
-S_M^\circ(T;P^\circ) =
-k_B\left[
-\ln\!\left(
-\frac{k_B T}{P^\circ \Lambda^3}
-\right)+\frac{5}{2}
-\right].
-$$
+when ZPE is enabled. If ZPE is disabled, \(\Delta E_{\mathrm{ZPE}}=0\).
 
-At pressure $P$, the entropy becomes
+The adsorption entropy is:
 
-$$
-\boxed{S_M(T,P) =
-S_M^\circ(T;P^\circ) -
-k_B\ln\!\left(\frac{P}{P^\circ}\right)}
-$$
+\[
+\boxed{
+\Delta S_{\mathrm{ads}}(T,p)=
+\Delta S_{\mathrm{vib}}(T)-S_g(T,p)
+}
+\]
 
-or, equivalently,
+and the Gibbs free energy is:
 
-$$
-S_M(T,P) =
-k_B\left[
-\ln\!\left(\frac{k_B T}{P\Lambda^3}\right)+\frac{5}{2}
-\right].
-$$
+\[
+\boxed{
+\Delta G_{\mathrm{ads}}(T,p)=
+\Delta H_{\mathrm{ads}}(T,p)
+-T\Delta S_{\mathrm{ads}}(T,p)
+}
+\]
+
+The implementation independently evaluates the equivalent expression:
+
+\[
+\boxed{
+\Delta G_{\mathrm{ads}}(T,p)=
+\Delta E_{\mathrm{ads}}
++\Delta F_{\mathrm{vib}}(T)
+-\mu_{g,\mathrm{th}}(T,p)
+}
+\]
 
-Use consistent SI units in this expression: $P$ and $P^\circ$ in Pa, $\Lambda$ in m, and $k_B$ in $\mathrm{J\,K^{-1}}$. The code configuration takes pressure in bar and converts it to Pa internally. The atom mass is selected from the configured adsorbate element, so Hg and Pb have different translational entropies.
+and raises an error if the two routes disagree beyond the backend-specific numerical tolerance. This is an internal thermodynamic consistency check, not an independent physical validation of the harmonic or ideal-gas approximations.
 
-For an ideal monatomic gas, the thermal enthalpy relative to the isolated-atom electronic energy is
+### 5.9 Temperature scan and zero-crossing search
 
-$$
-\boxed{H_{M,\mathrm{thermal}}(T)=\frac{5}{2}k_B T}.
-$$
+For every configured temperature \(T_k\), the program reuses the already calculated frequencies and evaluates:
 
-This comprises $3k_BT/2$ translational internal energy and $k_BT$ from $PV$ per atom. It is independent of pressure in the ideal-gas model.
+\[
+\{\Delta H_{\mathrm{ads}}(T_k),\,
+\Delta S_{\mathrm{ads}}(T_k),\,
+\Delta G_{\mathrm{ads}}(T_k)\}.
+\]
 
-The thermal gas chemical-potential correction relative to the isolated atom's electronic reference is evaluated as
+The scan is a thermodynamic post-processing step; it does not repeat geometry optimization or phonon calculations at every temperature.
 
-$$
-\boxed{\mu_{M,\mathrm{thermal}}(T,P) =
-H_{M,\mathrm{thermal}}(T)-T S_M(T,P)}.
-$$
+The root search seeks:
 
-It is a thermal correction; it is not the full absolute chemical potential including $E_M$. The electronic isolated-atom reference is already included in $\Delta E_{\mathrm{ads}}$, so adding it again would double count that energy.
+\[
+\Delta G_{\mathrm{ads}}(T^*,p)=0.
+\]
 
-### 4.5 Adsorption enthalpy, entropy, and Gibbs free energy
+It first checks the configured temperature grid for an exact zero or a sign-changing adjacent pair. If a sign change is bracketed, it applies bisection. The implementation uses a maximum of 100 iterations, a temperature interval tolerance of \(10^{-4}\) K, and a Gibbs-energy tolerance of \(10^{-10}\) eV. If no sign change exists in the configured interval, it reports no crossing; it does not extrapolate beyond the interval.
 
-The code's adsorption enthalpy correction is
+## 6. Output files and interpretation
 
-$$
-\boxed{\Delta H_{\mathrm{ads}}(T,P) =
-\Delta E_{\mathrm{ads}}+
-\Delta E_{\mathrm{ZPE}}+
-\Delta U_{\mathrm{vib,thermal}}(T)-
-H_{M,\mathrm{thermal}}(T)}
-$$
+Exact filenames depend on `output_prefix`, the selected adsorbate, and the phonon-stage prefixes constructed by the workflow.
 
-where $\Delta E_{\mathrm{ZPE}}$ is zero if `include_zpe = false`. The ideal monatomic-gas thermal enthalpy is subtracted because the reference state contains a gas-phase atom.
+Typical outputs include:
 
-The adsorption entropy is
-
-$$
-\boxed{\Delta S_{\mathrm{ads}}(T,P) =
-\Delta S_{\mathrm{vib}}(T)-S_M(T,P)}.
-$$
-
-The gas translational entropy is lost on adsorption in this model; the vibrational entropy change of the surface-bound system is added. Entropy is reported in $\mathrm{eV\,K^{-1}}$ per adsorbed atom (the gas entropy routine converts from $\mathrm{J\,K^{-1}}$ to $\mathrm{eV\,K^{-1}}$).
-
-The principal reported Gibbs free-energy change is
-
-$$
-\boxed{\Delta G_{\mathrm{ads}}(T,P) =
-\Delta H_{\mathrm{ads}}(T,P)-T\Delta S_{\mathrm{ads}}(T,P)}.
-$$
-
-The equivalent Helmholtz/chemical-potential expression is
-
-$$
-\boxed{\Delta G_{\mathrm{ads}}(T,P) =
-\Delta E_{\mathrm{ads}}+\Delta F_{\mathrm{vib}}(T)
--\mu_{M,\mathrm{thermal}}(T,P)}.
-$$
-
-The implementation calculates both routes and raises an error if they disagree beyond the backend-specific numerical tolerance. This identity is also a useful consistency check on units, ZPE conventions, and pressure handling. At fixed $T$, increasing the ideal-gas pressure lowers $S_M$, raises $\mu_{M,\mathrm{thermal}}$, and generally makes adsorption more favorable in this reference convention.
-
-**Sign convention:** negative $\Delta E_{\mathrm{ads}}$, $\Delta H_{\mathrm{ads}}$, or $\Delta G_{\mathrm{ads}}$ means adsorption is favorable relative to the specified separated-state reference at the stated conditions. A zero crossing of $\Delta G_{\mathrm{ads}}(T,P)$ is only found if the function changes sign within the configured temperature interval.
-
-### 4.6 Units, constants, and implementation details
-
-- Electronic energies, ZPE, $U$, $F$, $H$, $G$, and $\mu_{\mathrm{thermal}}$: eV per adsorbate.
-- Entropies: $\mathrm{eV\,K^{-1}}$ per adsorbate in the thermochemistry result dictionaries; ideal-gas expressions are evaluated in SI units first and converted to $\mathrm{eV\,K^{-1}}$.
-- Frequencies: $\mathrm{cm}^{-1}$; temperature: K; configured pressures: bar.
-- The code uses $k_B$ in both $\mathrm{J\,K^{-1}}$ and $\mathrm{eV\,K^{-1}}$, $h$ in $\mathrm{J\,s}$, the eV-to-joule conversion, and the $hc$ conversion appropriate for wavenumbers in $\mathrm{cm}^{-1}$.
-- At very large $x_i=\epsilon_i/(k_BT)$, the thermal occupation and thermal logarithm tend to zero; the implementation guards these terms against numerical overflow. At very small $x_i$, the entropy expression uses a small-$x$ limit for numerical stability.
-- The `custom` and `ase` thermochemistry backends are alternative implementations. Both follow the same intended harmonic/ideal-gas decomposition, but small numerical differences can occur due to backend implementation and constants. Record the backend in any report.
-- `print_ase_adsorbateslab_thermo_batch` is a diagnostic of the adsorbate/slab vibrational system alone. Its table is not the adsorption free energy because it does not subtract the clean slab or include the gas reference.
-- For a fully frozen clean slab, there are no clean-slab mobile modes, so its vibrational $U$, $S$, and $F$ contributions are zero by construction. In a full-slab calculation, the clean slab's included positive modes contribute to the subtracted reference. Thus full-slab and frozen-slab thermochemistry are different models and should not be mixed.
-
-### 4.7 Temperature scans and root finding
-
-For each configured temperature $T_k$, the workflow evaluates the same equations at the selected pressure and writes values including `E_ads`, `ZPE_ads`, `delta_U_vib_thermal`, `delta_U_vib_total`, `delta_F_vib`, `S_gas`, `S_ads_vib`, `S_surface_vib`, `S_ads`, `H_gas_thermal`, `H_ads`, and `G_ads` to `<prefix>_thermodynamics_scan.csv`.
-
-The root finder first evaluates the configured temperature grid, looks for an exact zero or a sign change between adjacent temperatures, and then uses bisection on the configured minimum-to-maximum temperature interval. It does not run new electronic-structure or phonon calculations during the scan. If there is no sign change in the interval, it reports no crossing; this does not imply that $\Delta G$ could not cross zero outside that interval.
-
-## 5. Outputs
-
-The exact filenames are controlled by `output_prefix`. Main outputs include:
-
-- `<prefix>_results.json`: final scalar results and thermodynamic information.
-- `<prefix>_thermodynamics_scan.csv`: thermodynamic values over the configured temperature grid when scanning is enabled.
-- `<prefix>_slab_phonons...`: clean Se54 vibrational output/cache.
-- `<prefix>_<adsorbate>_slab_phonons...`: adsorbate/Se54 vibrational output/cache.
-- ASE optimization trajectories when `save_trajectories = true`.
-- Frequency, signed-frequency, eigenvalue, metadata, and mode-diagnostic files produced by the selected phonon backend.
-
-The visualization utility can be used with the optimized structure and matching phonon cache, for example:
-
-```bash
-python visualize_vibrations.py \
-  --structure Hg_Se_opt.traj \
-  --phonon-dir adsorption_se54_dip_Hg_slab_phonons \
-  --addatom-symbol Hg \
-  --substrate-symbol Se
-```
-
-For Pb, change the structure, phonon-cache path, and `--addatom-symbol Pb`. Paths must match the files generated by the run being analyzed. The visualization script writes mode `.traj` and `.xyz` files and diagnostics into its output directory.
-
-## 6. Results present in the bundled output logs
-
-The archive includes several historical runs with different vibrational constraints and dispersion settings. The following values are copied from those logs and are **representative of those specific configurations**, not universal predictions.
-
-### Hg/Se54, MACE + DFT-D4, full-slab vibrations
-
-From `outputs/Hg_on_Se64/logfile_HgSe54_cpu_full_asevibr_1bar`:
-
-| Quantity | Value |
-|---|---:|
-| $E_{\mathrm{slab}}$ | -201.0272064335 eV |
-| $E_{\mathrm{Hg/Se54}}$ | -201.4115970950 eV |
-| $E_{\mathrm{Hg}}$ | -0.1245467400 eV |
-| $\Delta E_{\mathrm{ads}}$ | -0.2598439216 eV |
-| MACE adsorption component | +0.0298611410 eV |
-| DFT-D4 adsorption component | -0.2897050626 eV |
-| $\Delta F_{\mathrm{vib}}$ at reported final temperature | -0.1975541241 eV |
-| $G_{\mathrm{ads}}$ at reported final temperature | +0.0190499359 eV |
-| $T_{\mathrm{cross}}$ | 276.839421 K |
-| Final adsorbate height/distance diagnostic | 2.3543235873 Å |
-
-The corresponding visualization log reports 162 positive modes for the 55-atom full-mobile system and identifies Hg-dominated modes at 9.836, 11.877, and 31.010 cm⁻¹. The 31.010 cm⁻¹ mode is marked in that log as predominantly perpendicular to the surface.
-
-### Hg/Se54, MACE + DFT-D4, frozen-slab vibrations
-
-From `outputs/Hg_on_Se64/logfile_HgSe54_cpu_frozenslab_asevibr_1bar`:
-
-| Quantity | Value |
-|---|---:|
-| $\Delta E_{\mathrm{ads}}$ | -0.2598439216 eV |
-| ZPE adsorption correction | +0.0034984073 eV |
-| $\Delta F_{\mathrm{vib}}$ | -0.1911623917 eV |
-| $G_{\mathrm{ads}}$ at reported final temperature | +0.0254416683 eV |
-| $T_{\mathrm{cross}}$ | 270.363676 K |
-| Mobile atoms in clean slab phonons | 0 |
-| Mobile atoms in Hg/slab phonons | 1 |
-
-The visualization log gives the three Hg-only modes as 11.974, 14.587, and 29.871 cm⁻¹; the 29.871 cm⁻¹ mode has a reported perpendicular-motion fraction of 0.9775. The difference from the full-slab values is expected because the coordinate space is different.
-
-### Pb/Se54, MACE + DFT-D4, full-slab vibrations
-
-From `outputs/Pb_on_Se64/logfile_full_ase_vibr_PbSe54`:
-
-| Quantity | Value |
-|---|---:|
-| $E_{\mathrm{slab}}$ | -201.0272064335 eV |
-| $E_{\mathrm{Pb/Se54}}$ | -205.2829070388 eV |
-| $E_{\mathrm{Pb}}$ | -0.7764493200 eV |
-| $\Delta E_{\mathrm{ads}}$ | -3.4792512853 eV |
-| MACE adsorption component | -3.0721059220 eV |
-| DFT-D4 adsorption component | -0.4071453634 eV |
-| $\Delta F_{\mathrm{vib}}$ | -0.1191048345 eV |
-| $G_{\mathrm{ads}}$ at reported final temperature | -3.1206590355 eV |
-| $\Delta G_{\mathrm{ads}}$ zero crossing | None found from 0.1 to 600 K |
-| Final adsorbate height diagnostic | 1.0698370536 Å |
-| Minimum periodic Pb–Se distance | 2.7736867176 Å |
-
-The matching Pb visualization log reports 162 positive modes from 5.718 to 248.640 cm⁻¹. Its selected modes include 148.875, 11.017, and 56.291 cm⁻¹; none passes the default 0.20 total adsorbate-projection threshold in the reported full-slab analysis.
-
-### Pb/Se54, MACE-only, full-slab vibrations
-
-The logs `logfile_MACEonly_full_ase_vibr_PbSe54` and `_02` report a separate MACE-only calculation:
-
-| Quantity | Value |
-|---|---:|
-| $E_{\mathrm{slab}}$ | -186.2491159133 eV |
-| $\Delta E_{\mathrm{ads}}$ | -3.0912773959 eV |
-| MACE adsorption component | -3.0912773959 eV |
-| DFT-D4 adsorption component | 0.0000000000 eV |
-| $G_{\mathrm{ads}}$ at reported final temperature | -2.8094139118 eV |
-| $\Delta G_{\mathrm{ads}}$ zero crossing | None found from 0.1 to 600 K |
-| Final adsorbate height diagnostic | 0.9381958329 Å |
-| Minimum periodic Pb–Se distance | 2.7736867176 Å |
-
-Do not compare the absolute slab energies from the MACE-only Pb run directly with the MACE+D4 logs as if they were the same calculation: they use different calculator setups. The MACE-only and MACE+D4 adsorption energies are useful as separate protocol results.
-
-## 7. Vibrational constraints and mode interpretation
-
-The phonon calculation uses finite displacements and a Gamma-point Hessian. With `n_frozen_layers_vibrations = 0`, all 55 atoms are mobile and there are 165 Cartesian coordinates before any frequency filtering. With all six Se layers vibrationally frozen, the clean slab has no mobile coordinates and the adsorbate/slab system has three coordinates (the adsorbate atom).
-
-The code keeps the full physical structure in force evaluations while selecting only mobile coordinates for displacement and Hessian diagonalization. Significant imaginary modes are not silently converted into positive thermodynamic frequencies; with `fail_on_imaginary = true`, an unstable mode can stop the calculation.
-
-Mode projection is a diagnostic. It helps identify vibrations involving Hg or Pb, but thermochemistry uses the retained positive modes of the configured mobile-coordinate system, not only adsorbate-dominated modes.
-
-## 8. Vibrationally freezing the complete Se54 slab
-
-Set `freeze_all_substrate_vibrations = true` in the `[phonons]` section to freeze every atom identified as the substrate (`substrate_symbol`, `Se` for Se54) in the vibrational calculation. This option is independent of the automatically detected substrate-layer count, so it can be used even when `n_frozen_layers_vibrations` is larger than the number of layers detected from the structure.
-
-```ini
-[phonons]
-freeze_all_substrate_vibrations = true
-```
-
-When enabled, all Se atoms are excluded from the vibrational displacement/Hessian coordinates, while the adsorbate atom (Hg or Pb) remains mobile. For the clean Se54 slab, this leaves no mobile vibrational coordinates; for Hg/Se54 or Pb/Se54, only the adsorbate contributes mobile coordinates. The option affects vibrational selection only; it does not add or change geometry-optimization constraints.
-
-This setting takes precedence over `n_frozen_layers_vibrations`. When `freeze_all_substrate_vibrations = false`, the existing layer-based selection controlled by `n_frozen_layers_vibrations` is used instead.
-
-## 9. Validation and reproducibility checklist
-
-Before interpreting the numbers as quantitative adsorption thermodynamics:
-
-1. Confirm the correct adsorbate file and `adsorbate_symbol` (Hg or Pb) in the INI file.
-2. Record whether DFT-D4 is enabled and the D4 reference method, scale, and damping parameters.
-3. Record `n_frozen_layers` and `n_frozen_layers_vibrations`; do not mix full-slab and frozen-slab thermochemistry.
-4. Use a unique `output_prefix` for each element and protocol.
-5. Check the signed vibrational spectrum and investigate significant imaginary modes rather than ignoring them.
-6. Test finite-displacement sensitivity, e.g. 0.003, 0.005, and 0.008 Å.
-7. Compare custom and ASE thermochemistry backends for the same frequencies and settings.
-8. Check convergence with slab size, slab thickness, adsorption geometry, and constraints.
-9. For D4 runs, verify that `E_ads_component_sum` agrees with `E_ads`; retain the MACE and D4 components in reports.
-10. Archive the exact INI file, model path/version, package versions, and output logs with the reported results.
-
-## 10. Scope and limitations
-
-- The vibrational model is Gamma-point only for the supplied finite slab.
-- Harmonic thermochemistry omits anharmonicity and temperature-dependent structural effects.
-- Frozen-layer settings change the vibrational coordinate space and therefore change the reported free-energy correction.
-- The outputs are model- and protocol-dependent; the bundled numerical results should be labeled by element, calculator setup, pressure, and vibrational constraints.
-- The current package runs one adsorbate element per configuration. To switch from Hg to Pb, edit/select the corresponding INI file rather than trying to include both adsorbates in one run.
+- `*_thermodynamics_scan.csv`: temperature, electronic adsorption energy, ZPE, thermal vibrational terms, gas entropy/enthalpy, adsorption enthalpy/entropy, and Gibbs free energy.
+- `*_frequencies_cm-1.dat`: retained positive frequencies.
+- `*_signed_frequencies_cm-1.dat`: signed frequencies, including negative values.
+- `*_gamma_eigenvalues.dat`: dynamical-matrix eigenvalues for the custom backend.
+- `*_mode_diagnostics.dat`: mode index, frequency, adsorbate total/z projections, z fraction, and selection flags.
+- `*_metadata.json`: coordinate-selection and phonon settings.
+- ASE `.traj` files: optimization trajectories when `save_trajectories = true`.
+- optimization `.log` files and workflow JSON/result files: convergence and calculated quantities.
+
+Interpret key outputs as follows:
+
+- `E_ads` is the total electronic adsorption energy from the production calculator.
+- `E_ads_MACE` and `E_ads_DFTD4` are component contributions when the calculator decomposition is available.
+- `ZPE_ads` is the differential ZPE correction, not the absolute ZPE of the combined system.
+- `delta_U_vib_thermal` excludes ZPE.
+- `delta_U_vib_total` follows the `include_zpe` choice.
+- `S_gas` is the ideal-gas translational entropy at the requested pressure.
+- `H_ads`, `S_ads`, and `G_ads` are adsorption thermodynamic quantities under the stated reference model.
+- A reported zero-crossing temperature is conditional on the configured pressure and search interval.
+
+## 7. Important modeling choices and caveats
+
+1. **Structure consistency.** The clean slab and adsorbate/slab inputs should represent the same substrate cell and atom count. The workflow checks the substrate atom count and requires exactly one adsorbate atom in the combined structure.
+2. **Constraint consistency.** The same optimization-layer constraint setting is applied to both structures. Vibrational constraints are configured separately and affect which degrees of freedom enter the frequency calculation.
+3. **Frozen-slab approximation.** Freezing all substrate vibrations leaves the adsorbate coordinates as the vibrational system for the combined structure and can leave the clean slab with no mobile vibrational coordinates. This is a distinct approximation from including slab vibrations; results should be labelled accordingly.
+4. **Imaginary frequencies.** Significant imaginary modes indicate that the optimized structure is not a stable harmonic minimum in the selected coordinate space. Do not silently interpret them as ordinary real vibrational modes.
+5. **Frequency cutoff.** The positive cutoff changes the set of modes entering thermochemistry. Report it, especially when it is comparable to low-frequency surface modes.
+6. **Gas reference.** The gas entropy and chemical potential depend on adsorbate mass, temperature, pressure, and reference pressure. Pressure values are in bar.
+7. **MACE/D4 model.** D4 is added to MACE rather than being part of the MACE model. Record whether D4 was enabled, its scale, and its explicit damping parameters.
+8. **D4 diagnostic versus production term.** The adsorbate-involving pair diagnostic is not interchangeable with the full periodic D4 adsorption-energy component.
+9. **Harmonic approximation.** The formulas assume independent harmonic modes. Anharmonicity, coverage effects, configurational entropy, surface reconstruction, and alternative adsorption sites are not automatically sampled by this workflow.
+10. **Reference-state interpretation.** The isolated atom is the gas-phase electronic reference. The thermodynamic correction models an ideal monatomic gas, not a molecular precursor or a condensed-phase reservoir.
+11. **Root interpretation.** A zero of \(\Delta G_{\mathrm{ads}}\) is a zero relative to the chosen reference state. It is not, by itself, a kinetic transition temperature or proof of experimental desorption.
+12. **Reproducibility.** Record the exact input structures, INI file, MACE model filename/version, ASE/MACE/PyTorch/DFT-D4 versions, device, optimizer, convergence thresholds, phonon settings, and thermodynamic settings.
+
+## 8. Validation and troubleshooting
+
+- **Model path error:** set `[model] path` or pass `--model`.
+- **CUDA unavailable:** use `device = cpu` or `device = auto`, unless GPU execution is required.
+- **DFT-D4 import error:** install the pinned DFT-D4 dependency or set `d4_enabled = false`.
+- **D4 appears inactive:** inspect the calculator activity/decomposition diagnostics. A near-zero *physical adsorption contribution* can occur even if the D4 calculator itself is active; the workflow distinguishes activity tests from the calculated reaction contribution.
+- **Optimization failure:** inspect the optimizer log and trajectory; verify the starting geometry and the force threshold.
+- **Imaginary phonons:** inspect signed frequencies and mode diagnostics, then verify geometry, constraints, displacement, and selected mobile atoms.
+- **Unexpectedly few modes:** check `n_frozen_layers_vibrations` and `freeze_all_substrate_vibrations`.
+- **Unexpected thermodynamic values:** verify pressure units (bar), reference pressure, adsorbate symbol/mass, frequency cutoff, ZPE setting, and whether the frequency sets correspond to the intended coordinate spaces.
+- **No Gibbs-energy crossing:** this is a valid result when \(\Delta G_{\mathrm{ads}}\) does not change sign within the configured temperature interval.
+
+The source includes a lightweight `test_dftd4_ase.py` diagnostic. It should be run in the same Python environment used for the production calculation.
+
+## 9. Scientific reporting checklist
+
+For a reproducible report, state at least:
+
+- Adsorbate and substrate, adsorption geometry/site, and slab structure/cell.
+- MACE model identity and calculator composition (MACE-only or MACE+D4).
+- D4 scale and explicit damping parameters when enabled.
+- Optimization constraints, optimizer, and force thresholds.
+- Phonon backend, displacement, cutoff, symmetrization, and imaginary-mode policy.
+- Which atoms/layers were included in the vibrational coordinate set.
+- Thermochemistry backend, ZPE setting, gas pressure, and reference pressure.
+- Temperature(s) and the sign convention for adsorption energy/free energy.
+- The resulting \(\Delta E_{\mathrm{ads}}\), \(\Delta H_{\mathrm{ads}}\), \(\Delta S_{\mathrm{ads}}\), and \(\Delta G_{\mathrm{ads}}\), with units.
+- Any detected imaginary modes and any zero-crossing search interval/result.
+
+## 10. License
+
+See the repository `LICENSE` file for the applicable license terms.
