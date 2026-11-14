@@ -486,13 +486,12 @@ $$
 \boxed{
 \Delta H_{\mathrm{ads}}(T,p)=
 \Delta E_{\mathrm{ads}}
-+\Delta E_{\mathrm{ZPE}}
 +\Delta U_{\mathrm{vib}}(T)
 -H_g(T)
 }
 $$
 
-when ZPE is enabled. If ZPE is disabled, $\Delta E_{\mathrm{ZPE}}=0$.
+Here $\Delta U_{\mathrm{vib}}$ is the total harmonic vibrational internal-energy difference, including ZPE when `include_zpe = true`; when `include_zpe = false`, the ZPE part is omitted.
 
 The adsorption entropy is:
 
