@@ -1,4 +1,4 @@
-# Single-Atom Adsorption on Se(0001)-Type Slabs with MACE and Optional DFT-D4
+# Single-Atom Adsorption on t-Se(100) Surfaces with MACE and Optional DFT-D4
 
 ## 1. Project purpose
 
